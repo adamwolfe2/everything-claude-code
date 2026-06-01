@@ -1,72 +1,68 @@
 ---
-description: Initialize a workspace with full autonomous coding setup — explores the codebase, reads project context, and prepares for autonomous work with all agents and tools ready.
+name: init
+description: Open a session in autopilot mode. Read project context + global setup + recent decisions + slice spec, then greet with current state and wait for direction. Use at the start of any session in any project.
 ---
 
-# Init Command
+# /init — Autopilot session open
 
-Full workspace initialization for autonomous coding. Run this when starting a new session in any project.
+Read the global CLAUDE.md for the full autopilot contract. This command is the literal first-action sequence.
 
-## What This Command Does
+## Step 1: Read in parallel
 
-1. **Read project context** — CLAUDE.md, README, package.json, and any project config
-2. **Explore the codebase** — understand structure, tech stack, patterns, entry points
-3. **Check environment** — verify dependencies installed, env vars present, build works
-4. **Load memory** — check for existing memory files from prior sessions
-5. **Report status** — summarize what you found and what's ready
+Single message, multiple tool calls:
+- Project root `CLAUDE.md` (if present)
+- `PRODUCT.md`, `DESIGN.md` (if present)
+- Latest `.claude/specs/*.md` (most recent mtime — that's the current slice)
+- `git status` + `git log -3 --oneline`
+- Known-projects detail file at `~/.claude/projects/-Users-adamwolfe/memory/<project>.md` (if recognized)
+- `~/.claude/knowledge/index.json` (count + recent decisions)
+- `~/.claude/research-queue.md` (any pending /evolve-skills candidates?)
 
-## Execution Steps
+## Step 2: Auth/dependency lightning-check
 
-### Step 1: Read Project Context
-Read these files if they exist (in parallel):
-- `CLAUDE.md` (project root and any subdirectories)
-- `README.md`
-- `package.json` / `requirements.txt` / `Cargo.toml` / `go.mod`
-- `.env.example`
-- Any `CLAUDE.md` in parent directories
+Cheap (<2s, parallel):
+- `coderabbit auth status` — `OK` or `NEEDS LOGIN`
+- Existence of `~/.codex/auth.json`
+- `vercel whoami` (if `.vercel/project.json` in this project)
+- `gh auth status` (if a GitHub repo)
 
-### Step 2: Explore Codebase Structure
-- List top-level directories and key files
-- Identify the framework and tech stack
-- Count routes, components, modules
-- Find entry points (main files, app directories)
+If any are missing, list them in the greeting under `Auth needed:`.
 
-### Step 3: Verify Environment
-- Check if dependencies are installed (`node_modules/`, `venv/`, etc.)
-- If not installed, install them
-- Check for `.env.local` or equivalent — warn if missing
-- Run a build check if the project has a build command
-- Check git status and current branch
-
-### Step 4: Load Memory
-- Check `~/.claude/projects/*/memory/MEMORY.md` for this project
-- Read any existing memory files for context from prior sessions
-- Note any user preferences, project state, or feedback from memory
-
-### Step 5: Status Report
-Output a concise status report:
+## Step 3: Greet (≤120 words, no emojis, no preamble)
 
 ```
-WORKSPACE INITIALIZED
-=====================
-Project: [name]
-Stack: [framework, language, DB, etc.]
-Status: [ready / needs setup / issues found]
-Branch: [current git branch]
-Dependencies: [installed / missing]
-Environment: [configured / missing vars]
-Memory: [loaded / none found]
+Project: <name>
+Stack: <inferred from package.json>
+Branch: <current> · last commit: <subject> (<when>)
 
-Available agents: ceo, planner, architect, tdd-guide, code-reviewer,
-                  security-reviewer, build-error-resolver, e2e-runner,
-                  refactor-cleaner, doc-updater
+Current slice: <spec slug, or "none">
+Open items: <PRs, dirty files, ≤3 lines>
+Decisions: <n> indexed · Queue: <n> pending
 
-Ready for work. What do you need?
+Auth needed: <list if any, else omit>
+
+Likely next:
+  - <best guess at the next move based on slice status + recent commits>
+
+Or tell me what we're doing.
 ```
 
-## Important
+## Step 4: Wait
 
-- Do NOT ask for permission — just read, install, and set up
-- Do NOT wait between steps — run everything possible in parallel
-- Do NOT give time estimates
-- If something is missing (env vars, deps), fix it or clearly state what's needed
-- Keep the status report short and actionable
+Don't propose work until Adam states intent. Greeting + readiness only.
+
+## Hard rules
+
+- Run everything in step 1 + step 2 in **parallel**. Total time: ≤6s.
+- Read files, don't list them.
+- No emoji in greeting.
+- "Likely next" should be SPECIFIC — not "build a feature" but "finish slice X" or "respond to PR #142" or "fix CI on testing branch".
+- If this is a brand-new project (no `CLAUDE.md`, no `package.json`), surface `/onboard-project` as the likely first move.
+- If MEMORY.md lists this project, use its summary as the project description rather than re-deriving.
+- Do NOT recite agents, skills, or commands. The user knows.
+
+## Failure modes
+
+- If reads time out, skip them with a one-line note and continue.
+- If a tool isn't installed, skip its check.
+- If the project isn't in MEMORY.md, that's fine — infer from package.json.
