@@ -88,6 +88,51 @@ Create detailed steps with:
 - [ ] Criterion 2
 ```
 
+## Slice Decomposition (default for multi-file work)
+
+Decompose into **milestones → slices → tasks**:
+
+- **Milestone**: shippable unit of value, names the WHY ("Customers can self-serve refunds")
+- **Slice**: one safe, end-to-end change. Single invariant, one set of tests, one PR. 1–5 files. ("Add refund-eligibility check to order detail page")
+- **Task**: a concrete edit. File + intent. ("Add `isRefundable(order)` to `lib/orders.ts`")
+
+Rules:
+- Each slice MUST be independently shippable. If shipping slice 3 of 5 breaks prod, slices were wrong.
+- Each slice MUST protect one invariant. Tier-1 slices (money, auth, RLS, webhooks, state) MUST use the `safe-feature-slice` skill.
+- Each slice MUST have its own tests scoped to it.
+- Write each slice spec to `.claude/specs/YYYY-MM-DD-<slug>.md` so it survives sessions.
+
+Slice spec format (write to `.claude/specs/`):
+
+```text
+Slice: <name>
+Milestone: <name>
+
+What this slice does:
+[one sentence]
+
+Allowed scope:
+[files/folders expected to change]
+
+Invariant protected:
+[safety rule this slice must preserve]
+
+Dependencies:
+[what already exists]
+
+Integration risk:
+[how this could break another part]
+
+Tier: 1 / 2 / 3
+
+Tests:
+- happy: [...]
+- unhappy: [...]
+- safety (Tier 1): [wrong user, stale version, duplicate request, ...]
+
+Status: proposed | building | shipped
+```
+
 ## Best Practices
 
 1. **Be Specific**: Use exact file paths, function names, variable names
@@ -97,6 +142,7 @@ Create detailed steps with:
 5. **Enable Testing**: Structure changes to be easily testable
 6. **Think Incrementally**: Each step should be verifiable
 7. **Document Decisions**: Explain why, not just what
+8. **Slice-first**: Default to slice decomposition for multi-file work; write specs to `.claude/specs/`
 
 ## When Planning Refactors
 
