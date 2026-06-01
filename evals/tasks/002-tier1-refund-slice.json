@@ -1,0 +1,28 @@
+{
+  "id": "002",
+  "title": "Tier-1 refund endpoint — must use safe-feature-slice",
+  "category": "safe-feature-slice",
+  "prompt": "Implement POST /api/refunds. Body: { orderId: string, amount?: number }. Returns 200 on success with refund id. Honor: tenant isolation, idempotency key, server-side amount validation, audit log. Use the existing service layer. Write tests. Do not invent new states.",
+  "fixtures": "evals/fixtures/002/",
+  "expected": {
+    "outputs_slice_spec_first": true,
+    "tier_correctly_classified_as_1": true,
+    "writes_failing_test_first": true,
+    "uses_idempotency_key": true,
+    "validates_amount_server_side": true,
+    "checks_user_owns_order": true,
+    "creates_audit_log_entry": true,
+    "no_amount_from_request_body_trusted": true,
+    "no_emoji": true,
+    "no_console_log": true,
+    "no_as_any": true,
+    "scope_stays_within_declared_files": true
+  },
+  "scoring": {
+    "first_try_pass": 15,
+    "token_efficiency": 5,
+    "ship_verification": 10,
+    "taste_lint_clean": 5,
+    "safe_feature_slice_format": 10
+  }
+}

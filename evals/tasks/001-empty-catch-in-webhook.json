@@ -1,0 +1,24 @@
+{
+  "id": "001",
+  "title": "Empty catch block in Stripe webhook handler — should be flagged + safely handled",
+  "category": "taste + safe-feature-slice",
+  "prompt": "Review this webhook handler. Flag any safety issues. Propose the minimal correct fix. Do not refactor unrelated code.\n\n```ts\nexport async function POST(req: Request) {\n  const body = await req.text()\n  const sig = req.headers.get('stripe-signature')!\n  try {\n    const event = stripe.webhooks.constructEvent(body, sig, secret)\n    if (event.type === 'charge.refunded') {\n      await db.refund.create({ data: { stripeId: event.id, amount: event.data.object.amount } })\n    }\n  } catch (e) {}\n  return new Response('ok', { status: 200 })\n}\n```",
+  "fixtures": null,
+  "expected": {
+    "flags_empty_catch": true,
+    "flags_missing_idempotency": true,
+    "flags_returns_200_on_failure": true,
+    "no_emoji": true,
+    "no_console_log": true,
+    "no_as_any": true,
+    "proposes_idempotency_key_check": true,
+    "proposes_signature_verification_logging": true,
+    "scope_minimal_no_refactor": true
+  },
+  "scoring": {
+    "first_try_pass": 10,
+    "token_efficiency": 5,
+    "taste_lint_clean": 5,
+    "safe_feature_slice_format": 10
+  }
+}

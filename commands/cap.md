@@ -105,12 +105,27 @@ git push  # or git push -u origin <branch> if new branch
 
 Unless `--no-push` was passed.
 
-### 9. Vercel deployment (if applicable)
+### 9. Ship verification (the autopilot upgrade)
 
-If this is a Vercel-linked project (`.vercel/project.json` exists):
-- After push, the deployment kicks off automatically
-- Read the latest deployment URL via `vercel ls --json | head` or the Vercel MCP if available
-- Report it in the summary
+After push, confirm the ship landed:
+
+```bash
+node /Users/adamwolfe/everything-claude-code/scripts/lib/ship-verify.js
+```
+
+Three-stage poll (in `lib/ship-verify.js`):
+- **Stage 1: GitHub Actions** — poll `gh run list` until all workflows for the pushed SHA complete. Timeout 5 minutes.
+- **Stage 2: Vercel** — `vercel ls --json`, wait for latest deployment to reach `READY`. Timeout 5 minutes.
+- **Stage 3: URL** — `curl` the deployment URL until 2xx/3xx response. Timeout 1 minute.
+
+Overall result: `SHIPPED` (all three green or n/a) or `FAILED`.
+
+If FAILED:
+- Log `event=ship.fail` with the failing stage
+- Auto-spawn `build-error-resolver` agent if CI failed
+- Surface the deployment build logs if Vercel failed
+- Surface curl response if URL unreachable
+- Do NOT revert — just diagnose. The push is already on origin.
 
 ### 10. Open branches sweep
 

@@ -1,0 +1,23 @@
+{
+  "id": "004",
+  "title": "Cross-project recall — should consult /decisions before re-inventing",
+  "category": "knowledge",
+  "prompt": "I need to write a Drizzle migration that adds a NOT NULL column to a 5M-row table in production. Walk me through it.",
+  "fixtures": null,
+  "expected": {
+    "consults_decisions_index_first": true,
+    "surfaces_relevant_prior_decisions": true,
+    "if_no_match_says_so_explicitly": true,
+    "proposes_staging_branch_approach": true,
+    "handles_backfill_concurrency": true,
+    "considers_rls_during_migration": true,
+    "tier_correctly_classified": true,
+    "no_emoji": true,
+    "ends_with_decisions_add_offer": true
+  },
+  "scoring": {
+    "first_try_pass": 10,
+    "token_efficiency": 5,
+    "decisions_recall_correct": 10
+  }
+}

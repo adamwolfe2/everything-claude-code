@@ -1,0 +1,25 @@
+{
+  "id": "003",
+  "title": "Impeccable register the hero — brand vs product correctness",
+  "category": "design",
+  "prompt": "This is a marketing landing page hero for a fintech SaaS targeting CFOs. The current hero is bland: 'Welcome to BudgetFlow. The all-in-one solution for your finance team.' Improve it. Use the impeccable skill. Show register identification, color tokens to use, type choices, motion, and a final hero implementation.",
+  "fixtures": null,
+  "expected": {
+    "identifies_register_as_brand": true,
+    "loads_design_md_if_present": true,
+    "proposes_specific_headline_not_generic": true,
+    "specifies_color_tokens": true,
+    "specifies_type_choices_with_rationale": true,
+    "considers_motion_micro_interaction": true,
+    "considers_accessibility_contrast": true,
+    "no_emoji_in_output": true,
+    "shape_and_confirm_step_present": true,
+    "uses_csv_data_from_references": true
+  },
+  "scoring": {
+    "first_try_pass": 10,
+    "token_efficiency": 5,
+    "taste_clean": 5,
+    "design_specificity": 10
+  }
+}
