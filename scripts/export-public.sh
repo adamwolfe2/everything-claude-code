@@ -32,6 +32,8 @@ cp "$KIT/settings.json.example" "$DEST/settings.json.example"
 cp "$KIT/gitignore" "$DEST/.gitignore"
 
 # ---- 3. EXCLUDE: nuke anything private that slipped in via a copied dir ----
+# personalized commands whose EXAMPLES embed the real project roster — not teachable generically
+rm -f "$DEST/commands/dashboard.md" "$DEST/commands/morning-briefing.md" 2>/dev/null || true
 find "$DEST" -name 'MEMORY.md' -delete 2>/dev/null || true
 find "$DEST" -path '*knowledge*' -delete 2>/dev/null || true
 rm -f "$DEST/evals/harness-evals.jsonl" 2>/dev/null || true   # ships as .example instead
@@ -39,15 +41,29 @@ cp "$KIT/harness-evals.jsonl.example" "$DEST/evals/harness-evals.jsonl.example" 
 
 # ---- 4. SANITIZE: strip personal data from every text file ----
 # absolute home path -> ~, personal emails -> placeholder, gh org -> placeholder, long IDs -> redacted
-find "$DEST" -type f \( -name '*.md' -o -name '*.js' -o -name '*.mjs' -o -name '*.json' -o -name '*.sh' -o -name '*.example' \) -print0 \
+find "$DEST" -type f -not -path '*impeccable/references*' \( -name '*.md' -o -name '*.js' -o -name '*.mjs' -o -name '*.json' -o -name '*.sh' -o -name '*.yml' -o -name '*.yaml' -o -name '*.example' \) -print0 \
 | while IFS= read -r -d '' f; do
   sed -i '' \
     -e "s#/Users/adamwolfe#~#g" \
     -e "s#-Users-adamwolfe#-Users-USER#g" \
     -e "s#projects/-Users-USER/memory#memory#g" \
+    -e "s#Adam Wolfe's#{{YOUR_NAME}}'s#g" \
+    -e "s#Adam Wolfe#{{YOUR_NAME}}#g" \
     -e "s#Adam's#your#g" \
-    -e "s#\\bAdam\\b#you#g" \
+    -e "s#[[:<:]]Adam[[:>:]]#you#g" \
+    -e "s#[[:<:]]Wolfe[[:>:]]#you#g" \
+    -e "s#[[:<:]]Rocky'\\{0,1\\}s\\{0,1\\}[[:>:]]#<stakeholder>#g" \
     -e "s#known projects ([^)]*)#known projects (see projects.json)#g" \
+    -e "s#observed in trackr, taskspace, aims#observed across multiple repos#g" \
+    -e "s#[[:<:]][Tt]rackr[[:>:]]#repo-a#g" \
+    -e "s#[[:<:]][Tt]askspace[[:>:]]#repo-b#g" \
+    -e "s#[[:<:]][Ll]easestack[[:>:]]#repo-c#g" \
+    -e "s#[[:<:]][Cc]reditos[[:>:]]#repo-d#g" \
+    -e "s#[[:<:]][Cc]ampusgtm[[:>:]]#repo-e#g" \
+    -e "s#[[:<:]][Cc]ursive[[:>:]]#repo-f#g" \
+    -e "s#[[:<:]][Ww]holesail[[:>:]]#repo-g#g" \
+    -e "s#[[:<:]][Vv]end[Cc][Ff][Oo][[:>:]]#repo-h#g" \
+    -e "s#[[:<:]][Vv]endhub[[:>:]]#repo-i#g" \
     -e "s#adamwolfe10[0-9]@gmail.com#you@example.com#g" \
     -e "s#adamwolfe2/#YOUR_GH_ORG/#g" \
     -e "s#ModernAmenities-Org/#YOUR_GH_ORG/#g" \
@@ -61,7 +77,7 @@ done
 
 # ---- 5. LEAK SCAN: fail loudly if anything personal survived ----
 echo "→ leak-scanning output…"
-LEAKS=$(grep -rliE "adamwolfe|truffleboys|meetcursive|gensinger|melodi|vendhub|getmyvsl|aimseos|trytrackr|prj_[A-Za-z0-9]{20}|ins_[A-Za-z0-9]{20}|sk-[A-Za-z0-9]{20}" "$DEST" 2>/dev/null || true)
+LEAKS=$(grep -rliE "adamwolfe|[[:<:]]adam[[:>:]]|[[:<:]]wolfe[[:>:]]|[[:<:]]rocky[[:>:]]|truffleboys|meetcursive|gensinger|melodi|vendhubhq|getmyvsl|aimseos|trytrackr|trytaskspace|leasestack|prj_[A-Za-z0-9]{20}|ins_[A-Za-z0-9]{20}|sk-[A-Za-z0-9]{20}|sk_live|whsec_" "$DEST" 2>/dev/null | grep -viE "app/api/users|/users/user_|impeccable/references" || true)
 if [ -n "$LEAKS" ]; then
   echo "⚠ POTENTIAL LEAKS — review before sharing:"; echo "$LEAKS"
 else

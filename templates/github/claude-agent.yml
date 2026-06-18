@@ -31,13 +31,14 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            Review this pull request as Adam's standing code reviewer. Be terse.
+            Review this pull request as the project's standing code reviewer. Be terse.
             For each issue post an inline comment: SEVERITY: file:line — issue — fix.
             Prioritize, in order:
             - Security: IDOR/cross-tenant, auth/ownership gaps, injection, secrets, SSRF.
             - Correctness: state bugs, race conditions, swallowed errors (catch {}).
-            - Adam's hard rules: NO dark theme (light only, except AIMS), immutability
-              (never mutate inputs — spread/copy), no hardcoded secrets, no weakened/deleted tests.
+            - The project's documented conventions (see CLAUDE.md): immutability (never
+              mutate inputs — spread/copy), no hardcoded secrets, no weakened/deleted tests,
+              plus any design/theme rules the repo defines.
             End with one line: APPROVE / REQUEST CHANGES + the count of CRITICAL/HIGH.
           claude_args: "--max-turns 15"
 
