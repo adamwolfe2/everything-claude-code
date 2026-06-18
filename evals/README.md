@@ -1,35 +1,29 @@
-# Evals
+# Frozen eval set — the judge for harness evolution
 
-Frozen eval set for `/evolve-skills`. Each task in `tasks/` is a known scenario with known-good outcome. Results land in `results/` as JSONL per run.
+`harness-evals.jsonl` is the metric that gates `/evolve-skills` and the `harness-evolve` workflow.
 
-## Adding a task
+**The human writes the eval criteria. The metric is the judge. The agent doesn't ask permission to mutate — only to merge.**
 
-1. Pick a representative slice of work (Tier-1 safety, design polish, build-fix, etc.)
-2. Capture: prompt, fixtures, expected outcomes, scoring weights
-3. Manually verify the baseline passes on `main`
-4. Commit task + fixtures together
+## Format
 
-## Why these tasks
+One JSON object per line:
 
-The eval set is the score gate. If a task is easy and arbitrary, the gate is noise. If it's hard and representative, the gate is gold.
-
-Aim for:
-- 4 Tier-1 safety tasks (money, auth, RLS, webhook)
-- 3 design tasks (impeccable register: brand + product)
-- 3 build-error tasks (TS + Next.js + dependency)
-- 2 taste tasks (catches things hooks should warn about)
-- 2 cross-project decisions tasks (decisions index recall)
-
-That's 14 total. Aim to grow to 20 over time.
-
-## Scoring weights (default)
-
-```
-composite = 0.35 * first_try_pass
-          + 0.20 * (1 / token_spend_normalized)
-          + 0.20 * ship_verification_pass
-          + 0.15 * taste_lint_clean
-          + 0.10 * coverage_delta
+```json
+{"id":"short-id","prompt":"what the user says","grader":"model|code","assert":"what a correct response must do"}
 ```
 
-Tweak per-task in `scoring:` if a metric dominates inappropriately.
+- `grader: model` — a model judges the response against `assert` (0/1).
+- `grader: code` — `assert` is a shell snippet that exits 0 on pass (use for deterministic checks).
+
+## Rules
+
+1. **Evals are frozen during a mutation run.** A mutation that edits the eval file is rejected — that's gaming the metric.
+2. **Add an eval whenever you log a mistake.** A new mistake class → a new regression eval so the harness can't relapse.
+3. **Keep them fast.** Slow evals don't get run.
+4. Composite score = % of evals passed. A mutation promotes only if it beats main with no regression.
+
+## Growing the set
+
+- After `/log-mistake`, add a regression eval for that bug class here.
+- After `/digest` finds a recurring miss, add a capability eval.
+- Target: 20–30 evals covering the routing table, hard stops, output discipline, and advanced-capability surfacing.
