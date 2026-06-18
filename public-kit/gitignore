@@ -1,0 +1,17 @@
+# Never commit personal/runtime state to a public kit
+CLAUDE.md
+settings.json
+projects.json
+telemetry.jsonl
+mistakes.jsonl
+routing-log.jsonl
+bg-alerts.md
+research-queue.md
+knowledge/
+memory/
+MEMORY.md
+overnight/
+logs/
+.env*
+*.local
+evals/harness-evals.jsonl

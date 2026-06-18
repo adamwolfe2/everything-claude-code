@@ -1,0 +1,31 @@
+{
+  "version": "1.0",
+  "note": "Registry of your repos + per-project conventions. project-aware suggest pins these RULES when you open Claude inside a repo, so per-project gotchas never bite mid-session. Replace with your own.",
+  "global_conventions": [
+    "Example: NO emojis — use an icon library",
+    "Example: light theme only (except <project X>)",
+    "Example: always sync env vars to your host on change"
+  ],
+  "projects": [
+    {
+      "id": "my-app",
+      "path": "~/code/my-app",
+      "repo": "YOUR_GH_ORG/my-app",
+      "domain": "myapp.com",
+      "stack": "Next.js + Postgres + your-auth",
+      "conventions": [
+        "Design: <font>, <primary color>, <radius> — your visual rules",
+        "Gotcha: <the thing that breaks if you forget it>",
+        "Auth: <which auth, any quirks>"
+      ]
+    },
+    {
+      "id": "another-service",
+      "path": "~/code/another-service",
+      "repo": "YOUR_GH_ORG/another-service",
+      "domain": "n/a",
+      "stack": "Node/TS worker",
+      "conventions": ["PRs target `staging` not `main`", "uses provider X not Y"]
+    }
+  ]
+}

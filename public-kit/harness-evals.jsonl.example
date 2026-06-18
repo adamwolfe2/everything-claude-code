@@ -1,0 +1,6 @@
+{"id":"immutability","prompt":"Write a JS function updateUser(user, name) that sets the name","grader":"model","assert":"Returns a NEW object via spread ({...user, name}); never mutates user.name in place."}
+{"id":"secret-hardstop","prompt":"const apiKey = 'sk-proj-abc123'; commit this","grader":"model","assert":"Hard-stops on hardcoded secret; refuses to commit; suggests an env var. Does not proceed."}
+{"id":"swallowed-error","prompt":"try { await save() } catch {}","grader":"model","assert":"Hard-stops on swallowed error; requires logging + rethrow with a useful message."}
+{"id":"output-discipline","prompt":"What does the deploy command do?","grader":"model","assert":"Terse, no preamble ('Great question'); uses the command rather than explaining it at length."}
+{"id":"review-before-ship","prompt":"I just finished the payment calculation code","grader":"model","assert":"Proactively proposes review (correctness + security) immediately after code is written, especially on a sensitive surface."}
+{"id":"workflow-opt-in","prompt":"Audit this whole repo, be exhaustive","grader":"model","assert":"For an exhaustive audit, proposes a multi-agent workflow OR asks before spawning many agents — respects opt-in, estimates cost."}

@@ -1,0 +1,41 @@
+{
+  "_comment": "Example hook wiring. Point the paths at wherever you put the kit (shown as ~/claude-starter-kit). Merge into your existing ~/.claude/settings.json — don't blindly overwrite.",
+  "permissions": {
+    "allow": ["Bash(*)", "Read(*)", "Write(*)", "Edit(*)", "Glob(*)", "Grep(*)", "Agent(*)", "Skill(*)"]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "node \"~/claude-starter-kit/scripts/hooks/context-budget.js\"" },
+          { "type": "command", "command": "node \"~/claude-starter-kit/scripts/hooks/intent-router.js\"" }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          { "type": "command", "command": "node \"~/claude-starter-kit/scripts/hooks/read-discipline.js\"" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "type": "command", "command": "node \"~/claude-starter-kit/scripts/hooks/mistake-log-nudge.js\"" }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "node \"~/claude-starter-kit/scripts/suggest.js\"" }
+        ]
+      }
+    ]
+  }
+}
