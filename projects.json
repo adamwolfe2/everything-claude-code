@@ -1,0 +1,32 @@
+{
+  "version": "2026-06-18",
+  "note": "Machine-readable project registry derived from MEMORY.md. Foundation for all cross-project tooling (project-aware suggest/router now; multi-repo-sweep + CI fleet later). `conventions` = the critical per-project rules/gotchas that must not be violated. Global rules: NO emojis (Lucide icons), NO dark theme — EXCEPT aims-platform (dark/gold by design).",
+  "global_conventions": [
+    "NO emojis anywhere — use Lucide React icons",
+    "NO dark theme — light only (EXCEPTION: aims-platform)",
+    "Always push env var updates to Vercel when updating .env.local",
+    "Commit frequently; batch Vercel builds; stage files explicitly"
+  ],
+  "projects": [
+    { "id": "trackr", "path": "~/trackr", "repo": "adamwolfe2/trackr", "domain": "trytrackr.com", "stack": "Next 16 + Clerk + Drizzle/Neon + pnpm", "conventions": ["Offset Brutalist: #F3F3EF bg, black borders, 0 radius, Newsreader serif, Geist Mono", "NO sage/green", "NO dark mode"] },
+    { "id": "cursive", "path": "~/cursive-project/cursive-work", "repo": "adamwolfe2/cursive", "domain": "meetcursive.com", "stack": "multi-tenant SaaS, Supabase 143 tables", "conventions": ["multi-tenant — always filter by workspace/tenant", "app=leads.meetcursive.com, marketing=meetcursive.com"] },
+    { "id": "taskspace", "path": "~/aimseod", "repo": "adamwolfe2/taskspace", "domain": "trytaskspace.com", "stack": "Next 16 + custom session auth (NO Clerk) + Neon raw SQL", "conventions": ["custom session auth, not Clerk", "raw SQL not ORM", "repo is 'taskspace' NOT 'aimseod'"] },
+    { "id": "tbgc", "path": "~/tbgc", "repo": "adamwolfe2/TBGC", "domain": "truffleboys.com", "stack": "Next 16 + Clerk + Prisma 7.4/Neon", "conventions": ["B2B wholesale + luxury food, enterprise tone"] },
+    { "id": "aims-platform", "path": "~/aims-platform", "repo": "adamwolfe2/aims-platform", "domain": "aimseos.com", "stack": "Next 16 + Clerk + Prisma/Neon + AI SDK v6", "conventions": ["DARK/GOLD by design — the ONE exception to the no-dark rule"] },
+    { "id": "wholesail", "path": "~/portal-intake", "repo": "adamwolfe2/wholesail", "domain": "wholesailhub.com", "stack": "Next 16 + Clerk + Prisma/Neon", "conventions": ["white-label B2B distribution portal template"] },
+    { "id": "hookugc", "path": "~/gtmengine", "repo": "adamwolfe2/gtmengine", "domain": "hookugc.com", "stack": "Next 14+ + Prisma/Neon + NextAuth", "conventions": ["auth via getServerSession(authOptions), NOT Clerk"] },
+    { "id": "qualifi", "path": "~/flowline", "repo": "adamwolfe2/flowline", "domain": "getmyvsl.com", "stack": "Next 16 + Drizzle/Neon + Clerk", "conventions": ["forest green #2D6A4F", "Instrument Sans body + Instrument Serif headings", "NO emojis, NO dark", "super admin hardcoded in src/lib/admin.ts"] },
+    { "id": "amcollective", "path": "~/amcollective", "repo": "adamwolfe2/amcollective", "domain": "amcollectivecapital.com", "stack": "Next 16 + Clerk + Drizzle/Neon pgvector + Inngest", "conventions": ["@neondatabase/serverless MUST stay 0.10.4 (1.0.2 breaks drizzle neon-http)", "roles via publicMetadata not orgs"] },
+    { "id": "creditos", "path": "~/amex-portal", "repo": "adamwolfe2/amex-portal", "domain": "amex-portal.vercel.app", "stack": "Next 16 + Clerk + Drizzle/Neon", "conventions": ["Satoshi font, #1a1a2e navy", "NO emojis, NO dark, NO colored badges (grey labels only)", "BUG: Stripe checkout redirect fails in prod"] },
+    { "id": "leasestack", "path": "~/realos", "repo": "adamwolfe2/realos", "domain": "leasestack.co", "stack": "Next 16 + Clerk + Prisma 7.4/Neon + pnpm", "conventions": ["leasing intel — track NOT manage", "Norman-brief polish style"] },
+    { "id": "vendcfo", "path": "~/vendcfo", "repo": "adamwolfe2/vendcfo", "domain": "vendcfo.vercel.app", "stack": "Next 16 + Drizzle/Supabase + Supabase Auth + TRPC v11", "conventions": ["forked Midday", "Supabase auth not Clerk"] },
+    { "id": "pps", "path": "~/PPS", "repo": "adamwolfe2/pps", "domain": "premier-printing", "stack": "Next + Prisma + Supabase Postgres + Stripe", "conventions": ["Supabase auth NOT Clerk", "dual .env+.env.local intentional — don't consolidate"] },
+    { "id": "vendhub", "path": "~/vendhub", "repo": "ModernAmenities-Org/vendhub", "domain": "vendhubhq.com", "stack": "Next + Supabase + Clerk + Stripe", "conventions": ["PRs target `staging` branch NEVER `main` — main is downstream", "org repo not adamwolfe2"] },
+    { "id": "campaign-os", "path": "~/campaign-os", "repo": "adamwolfe2/campaign-os", "domain": "campaign-os-beta.vercel.app", "stack": "Next 14 + NextAuth + Drizzle/Neon (SHARED crm DB)", "conventions": ["Vercel BLOCKS deploys unless commit author=adamwolfe102@gmail.com"] },
+    { "id": "moving-castle", "path": "~/moving-castle", "repo": "adamwolfe2/our-moving-castle", "domain": "ourmovingcastle.vercel.app", "stack": "Next 16 + Drizzle/Neon + jose auth", "conventions": ["pnpm 11 needs `pnpm approve-builds --all`", "Vercel am-collective may require commit author adamwolfe102@gmail.com"] },
+    { "id": "steel-trap", "path": "~/steel-trap-audit-log", "repo": "AIMS-Product/SteelTrapAuditLog", "domain": "private", "stack": "Next 15 + Supabase + Close + Anthropic + Convex", "conventions": ["immutable audit ledger, SHA-256 hash chain", "monorepo: agent/mcp/dashboard"] },
+    { "id": "attention-pipeline", "path": "~/attention-pipeline", "repo": "private", "domain": "n/a", "stack": "Node/TS ESM + supabase-js + OpenAI", "conventions": ["service-role getDb()", "NO Anthropic key — uses OpenAI gpt-4o", "env is .env (sandbox-blocked)"] },
+    { "id": "campusgtm", "path": "~/campus-gtm", "repo": "adamwolfe2/campus-gtm", "domain": "TBD", "stack": "Next + Stripe", "conventions": ["missing env: STRIPE_WEBHOOK_SECRET, UPSTASH, social OAuth"] },
+    { "id": "slp-platform", "path": "~/slp-platform", "repo": "n/a", "domain": "TBD", "stack": "research phase, no code", "conventions": ["SLP/OT private practice SaaS, co-founder is clinical lead"] }
+  ]
+}

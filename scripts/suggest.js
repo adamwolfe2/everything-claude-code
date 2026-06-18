@@ -26,6 +26,20 @@ const daysSince = (p) => { try { return (Date.now() - fs.statSync(p).mtimeMs) / 
 const S = []; // {cat, urgency, text, say}
 const add = (cat, urgency, text, say) => S.push({ cat, urgency, text, say });
 
+// ---- project awareness: which repo am I in? -----------------------------------
+let project = null;
+try {
+  const reg = JSON.parse(read(path.join(ECC, 'projects.json')));
+  const here = process.cwd();
+  const expand = (p) => p.replace(/^~/, HOME);
+  // longest matching path wins (handles nested repos)
+  project = (reg.projects || [])
+    .map((p) => ({ ...p, abs: expand(p.path) }))
+    .filter((p) => here === p.abs || here.startsWith(p.abs + '/'))
+    .sort((a, b) => b.abs.length - a.abs.length)[0] || null;
+  if (project) project._global = reg.global_conventions || [];
+} catch {}
+
 // ---- DO: pending work in the current repo + harness --------------------------
 const cwd = process.cwd();
 const branch = sh(`git -C "${cwd}" rev-parse --abbrev-ref HEAD 2>/dev/null`);
@@ -53,6 +67,13 @@ const openItems = (read(path.join(CLAUDE,'research-queue.md')).match(/^- \[ \]/g
 if (openItems >= 3) add('DO', 5, `${openItems} open items in research-queue.`, 'say "run loop-harness" to draft proposals for them');
 
 // ---- ASK: query state Adam might want -----------------------------------------
+if (project) {
+  // per-project decisions count (prior art for THIS repo)
+  const decDir = path.join(CLAUDE, 'knowledge', 'decisions');
+  const decHits = (exists(decDir) ? fs.readdirSync(decDir) : []).filter((f) => f.toLowerCase().includes(project.id)).length;
+  if (decHits) add('ASK', 4, `${decHits} prior decision(s) logged for ${project.id}.`, `say "decisions ${project.id}"`);
+  add('ASK', 2, `${project.id} context (stack/gotchas) is in the registry.`, `ask "what do we know about ${project.id}?"`);
+}
 add('ASK', 3, 'Cross-project status without grepping.', 'ask "what changed in <project>?" (harness-state MCP)');
 if (LIVE) {
   // best-effort: which repos have open PRs
@@ -94,8 +115,20 @@ if (unroutedCmd && +unroutedCmd > 0) add('LOOP', 2, `${unroutedCmd} commands hav
 // ---- render -------------------------------------------------------------------
 S.sort((a,b)=>b.urgency-a.urgency);
 const top = S.slice(0, 6);
-if (!top.length) process.exit(0);
-const out = ['[suggest] Proactive next moves (say the word — you needn\'t know the tool):'];
-for (const s of top) out.push(`  ${s.cat.padEnd(4)} ${s.text}  →  ${s.say}`);
-out.push('  (or just describe what you want — the router maps it.)');
+const out = [];
+
+// pinned project header — conventions ALWAYS show when inside a known repo (rule guard)
+if (project) {
+  out.push(`[project: ${project.id}] ${project.repo} · ${project.stack || ''}`);
+  const conv = (project.conventions || []).slice(0, 4);
+  if (conv.length) out.push(`  RULES: ${conv.join(' · ')}`);
+  out.push('');
+}
+
+if (top.length) {
+  out.push('[suggest] Proactive next moves (say the word — you needn\'t know the tool):');
+  for (const s of top) out.push(`  ${s.cat.padEnd(4)} ${s.text}  →  ${s.say}`);
+  out.push('  (or just describe what you want — the router maps it.)');
+}
+if (!out.length) process.exit(0);
 process.stdout.write(out.join('\n') + '\n');
