@@ -1,0 +1,62 @@
+# Claude CI/CD agent — reusable template.
+# Copy to <repo>/.github/workflows/claude-agent.yml and add the ANTHROPIC_API_KEY secret:
+#   gh secret set ANTHROPIC_API_KEY --repo <org>/<repo>
+# Two behaviors:
+#   1. Auto-review every PR (opened/synchronize) using Adam's review rules.
+#   2. Respond to @claude mentions in PR/issue comments (agentic fix/answer).
+name: Claude Agent
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+# Only run the mention job when a human actually @claude's it
+jobs:
+  claude-review:
+    # auto-review: only on PR events, skip drafts
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review this pull request as Adam's standing code reviewer. Be terse.
+            For each issue post an inline comment: SEVERITY: file:line — issue — fix.
+            Prioritize, in order:
+            - Security: IDOR/cross-tenant, auth/ownership gaps, injection, secrets, SSRF.
+            - Correctness: state bugs, race conditions, swallowed errors (catch {}).
+            - Adam's hard rules: NO dark theme (light only, except AIMS), immutability
+              (never mutate inputs — spread/copy), no hardcoded secrets, no weakened/deleted tests.
+            End with one line: APPROVE / REQUEST CHANGES + the count of CRITICAL/HIGH.
+          claude_args: "--max-turns 15"
+
+  claude-mention:
+    # agentic: only when a comment contains @claude
+    if: |
+      (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment')
+      && contains(github.event.comment.body, '@claude')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # the action reads the triggering @claude comment as the task automatically
+          claude_args: "--max-turns 25"

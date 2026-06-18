@@ -23,6 +23,9 @@ const CAPS = [
   { key: 'evolve-skills', pitch: '/evolve-skills — metric-gated mutation loop. Closes the LEARN loop; without it /digest suggestions go nowhere.' },
   { key: 'digest', pitch: '/digest — weekly closed-loop learning. Reads telemetry + mistakes, proposes the next optimization.' },
   { key: 'log-mistake', pitch: '/log-mistake — capture the bug you just fixed as a regression eval. Your mistakes.jsonl is the flywheel fuel.' },
+  { key: 'harness-state', pitch: 'harness-state MCP — query MEMORY/decisions/telemetry/mistakes/project-status as tools. Ask it "what changed in <project>?" instead of grepping.' },
+  { key: 'bg-watch', pitch: '/bg-watch — launch the standing PR/CI watcher in the background, or run the loop-harness to drain the research-queue in one pass.' },
+  { key: 'ci-agent', pitch: 'CI/CD agent — fan the Claude GitHub Action to a repo (scripts/setup-ci-agent.sh) so every PR auto-reviews and @claude can fix in CI.' },
 ]
 
 function countMentions() {

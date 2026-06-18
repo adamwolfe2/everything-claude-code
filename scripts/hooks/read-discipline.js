@@ -5,8 +5,10 @@
 // >40K chars) read with NO offset/limit — normal reads pass untouched.
 const fs = require('fs');
 
-const MAX_LINES = 1000;
+const MAX_LINES = 1000;   // hard deny (egregious)
 const MAX_CHARS = 40000;
+const WARN_LINES = 600;   // non-blocking nudge (evolve 2026-06-18): the audit's real
+const WARN_CHARS = 24000; // concern was full reads of >400-line files; deny bar was 2.5x too high
 
 let d = '';
 process.stdin.on('data', c => (d += c));
@@ -21,11 +23,18 @@ process.stdin.on('end', () => {
   try {
     const stat = fs.statSync(p);
     chars = stat.size;
-    if (chars <= MAX_CHARS) { process.stdout.write(d); process.exit(0); }
-    // count lines cheaply only if size is borderline; for big files chars already trips it
+    // below the WARN floor → allow without counting lines
+    if (chars <= WARN_CHARS) { process.stdout.write(d); process.exit(0); }
     const buf = fs.readFileSync(p, 'utf8');
     lines = buf.split('\n').length;
   } catch { process.stdout.write(d); process.exit(0); }
+
+  // WARN tier: non-blocking nudge for medium files that slip under the deny bar
+  if ((lines > WARN_LINES || chars > WARN_CHARS) && !(lines > MAX_LINES || chars > MAX_CHARS)) {
+    console.error(`[READ DISCIPLINE] ${p} is ${lines} lines / ~${Math.round(chars/1000)}K chars. Grep for the symbol you need, then Read a range with offset/limit. (nudge)`);
+    process.stdout.write(d);
+    process.exit(0);
+  }
 
   if (lines > MAX_LINES || chars > MAX_CHARS) {
     const out = {

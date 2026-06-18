@@ -51,7 +51,10 @@ process.stdin.on('end', () => {
     fs.writeFileSync(flag, String(now));
   } catch {}
 
-  console.error('[mistake-log] Looks like a bug fix (' + reason + '). Log this fix? Run /log-mistake to capture root cause + prevention.');
+  console.error('[mistake-log] Bug fix detected (' + reason + '). Before moving on: '
+    + '(1) /log-mistake — root cause + the CLASS of mistake to prevent; '
+    + '(2) add a one-line regression eval to ~/.claude/evals/. '
+    + 'mistakes.jsonl is the flywheel fuel that /digest + harness-evolve learn from — keep it fed.');
   process.stdout.write(d);
   process.exit(0);
 });
