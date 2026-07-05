@@ -1,0 +1,4 @@
+interface:
+  display_name: "Code Review"
+  short_description: "Harsh unified review workflow with built-in structural scrutiny."
+  default_prompt: "Use $code-review to review the current changes harshly. Return high-confidence correctness, safety, testing, behavior-preservation, and structural maintainability findings with evidence, verification, and the right next workflow such as $safe-feature-slice for fixes."

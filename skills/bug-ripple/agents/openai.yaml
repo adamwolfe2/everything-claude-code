@@ -1,0 +1,4 @@
+interface:
+  display_name: "Bug Ripple"
+  short_description: "Run a strict sibling-bug sweep after one confirmed bug"
+  default_prompt: "Use $bug-ripple to diagnose this bug harshly, define the blast radius, and search for sibling failures without broadening into a repo-wide review."

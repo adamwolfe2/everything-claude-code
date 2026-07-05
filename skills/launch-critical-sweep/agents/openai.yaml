@@ -1,0 +1,4 @@
+interface:
+  display_name: "Launch Critical Sweep"
+  short_description: "Find confirmed launch-blocking catastrophic risks"
+  default_prompt: "Use $launch-critical-sweep to check this codebase for confirmed P0/P1 launch blockers across auth, data loss, money, integrations, deployment, and trust-breaking client workflows. For each blocker, give full detail on what is broken, who/what is affected, why it must be fixed before launch, and how to verify the fix."

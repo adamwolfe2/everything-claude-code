@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cap"
+  short_description: "Check, commit, and push safely"
+  default_prompt: "Use $cap to choose the smallest honest finish mode, verify the intended work, repair safe local failures, stage exact files only, resolve branch intent with the numbered menu when ambiguous, treat 'continue' as option 1, create a Conventional Commit, and push safely. Use $cap fast for tiny bounded changes, $cap dry-run for no-mutation rehearsal, $cap verify for checks only, $cap watch for post-push deployment follow-through, and $cap release for the full verify/commit/push/deploy-recovery path."

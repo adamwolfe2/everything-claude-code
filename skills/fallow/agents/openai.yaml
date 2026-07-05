@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fallow"
+  short_description: "Run read-only JS/TS structural analysis"
+  default_prompt: "Run Fallow read-only structural analysis on this repo and report the evidence line."

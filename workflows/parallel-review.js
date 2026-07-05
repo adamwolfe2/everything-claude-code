@@ -9,7 +9,16 @@ export const meta = {
 }
 
 // args: optional { scope?: string }  — what to review (defaults to "uncommitted changes")
-const scope = (args && args.scope) || 'the uncommitted changes (git diff HEAD)'
+// Accept {scope: "..."} OR a plain string. A malformed non-string/non-object arg fails loud —
+// a silent fallback here once burned two full review runs on an empty default diff (2026-07-02).
+const scope =
+  typeof args === 'string' && args.trim()
+    ? args
+    : args && typeof args.scope === 'string' && args.scope.trim()
+      ? args.scope
+      : args == null
+        ? 'the uncommitted changes (git diff HEAD)'
+        : (() => { throw new Error('parallel-review: args must be a string or {scope: string}; got ' + JSON.stringify(args).slice(0, 200)) })()
 
 const FINDINGS = {
   type: 'object',

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Thermo-Nuclear Code Quality Review"
+  short_description: "Extremely strict maintainability audit"
+  default_prompt: "Use $thermo-nuclear-code-quality-review to run a harsh maintainability review focused on simplification and code quality."

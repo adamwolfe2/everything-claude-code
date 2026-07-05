@@ -1,8 +1,10 @@
 ---
-description: Commit And Push. Full preflight (lint, types, tests, format, build, env sync, optional CodeRabbit), session memory extraction, conventional commit, push, and status report. Use this instead of raw git commit && git push.
+description: "[LEGACY — superseded by the `cap` skill from vanderhaka/skills. Use `cap` instead.] ECC commit-and-push: preflight (lint, types, tests, format, build, env sync, optional CodeRabbit), conventional commit, push. Only invoke explicitly as /cap-ecc."
 ---
 
-# /cap — Commit And Push
+# /cap-ecc — Commit And Push (legacy)
+
+> Retired in favor of James's `cap` skill (verify → repair → exact-stage → commit → push → deploy-watch). This remains as `/cap-ecc` for reference only; do not auto-trigger on "cap".
 
 The headline ship workflow. Runs every relevant check that could block a deploy, then commits and pushes only if everything is green.
 

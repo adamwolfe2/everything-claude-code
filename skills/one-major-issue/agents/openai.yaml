@@ -1,0 +1,4 @@
+interface:
+  display_name: "One Major Issue"
+  short_description: "Find at most one confirmed high-impact codebase issue"
+  default_prompt: "Use $one-major-issue to find the single biggest confirmed issue in this codebase. Do not force a finding if no major issue can be responsibly confirmed. Include a $safe-feature-slice fix handoff only for a confirmed issue. Extra instruction: focus on auth, data loss, or deployment risk."

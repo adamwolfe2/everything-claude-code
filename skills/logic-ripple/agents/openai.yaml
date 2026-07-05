@@ -1,0 +1,4 @@
+interface:
+  display_name: "Logic Ripple"
+  short_description: "Map business-rule ripple before fixes"
+  default_prompt: "Use $logic-ripple to map where this business rule should change, what only looks similar, and what to report before any fixes."

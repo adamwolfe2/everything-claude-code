@@ -1,0 +1,4 @@
+interface:
+  display_name: "Issue Fix Strategy"
+  short_description: "Plain-English issue triage"
+  default_prompt: "Use $issue-fix-strategy to explain these issues, prioritize them, define proof, and recommend the next workflow step."

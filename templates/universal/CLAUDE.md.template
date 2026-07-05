@@ -1,0 +1,44 @@
+# <PROJECT> — Claude Context
+
+<!-- Fill every line. Delete lines that don't apply. Keep under 400 words: every line must save more tokens than it costs. A model with ZERO prior context must be able to work from this file alone. -->
+
+## FACTS
+
+- App: <one line: what it is, who uses it>
+- URL: <prod domain> · Vercel project: <name> · Repo: <org/name>
+- Stack: Next.js <ver> (App Router) · TypeScript strict · Tailwind + shadcn
+- Package manager: <pnpm|npm> — use ONLY this one
+- DB: <Neon|Supabase> via <Drizzle|Prisma|supabase-js|raw SQL> · schema at <path>
+- Auth: <Clerk|NextAuth|Supabase|custom> · guard helper: <path + fn name>
+- Payments: <Stripe|none> · webhook route: <path>
+- Theme: <LIGHT only|DARK by design> · NO emojis, Lucide icons only
+- Design tokens: <path or "globals.css"> · brand: <2-3 words, e.g. "Offset Brutalist, no green">
+
+## COMMANDS
+
+- dev: `<cmd>` · build: `<cmd>` · typecheck: `npx tsc --noEmit`
+- test: `<cmd or "NO TEST SUITE — do not invent one without asking">`
+- db migrate: `<cmd>` · deploy: push to <branch> → Vercel auto
+
+## CONVENTIONS
+
+Global standards apply (see ~/.claude CODING_STANDARDS.md). Repo-specific deltas ONLY:
+- <e.g. "PRs target `staging`, NEVER `main`">
+- <e.g. "business logic in lib/, never in API routes">
+- <e.g. "@neondatabase/serverless pinned 0.10.4 — do not bump">
+
+## TIER-1 SURFACES (money/auth/ownership — safe-feature-slice required)
+
+- <path>: <what makes it dangerous>
+- <path>: <what makes it dangerous>
+
+## GOTCHAS
+
+<!-- Only things a model WILL get wrong without being told. Each earned its place by burning a session once. -->
+- <e.g. "Vercel rejects deploys unless commit author = adamwolfe102@gmail.com">
+- <e.g. "next build does NOT typecheck test files — run tsc separately">
+
+## POINTERS
+
+- Specs: `.claude/specs/` (read newest first) · Key docs: <paths>
+- Env: `.env.local` — after ANY env change, push to Vercel (env-sync skill)
