@@ -1,0 +1,99 @@
+{
+  "n": 13,
+  "baselineScore": 38.5,
+  "mutatedScore": 30.8,
+  "moved": [
+    {
+      "id": "no-dark-theme",
+      "baseline": true,
+      "mutated": false
+    },
+    {
+      "id": "caveman-output",
+      "baseline": true,
+      "mutated": false
+    },
+    {
+      "id": "context-budget",
+      "baseline": true,
+      "mutated": false
+    },
+    {
+      "id": "swallowed-error",
+      "baseline": false,
+      "mutated": true
+    },
+    {
+      "id": "log-mistake-after-fix",
+      "baseline": false,
+      "mutated": true
+    }
+  ],
+  "table": [
+    {
+      "id": "tier1-routing",
+      "A": false,
+      "B": false
+    },
+    {
+      "id": "no-dark-theme",
+      "A": true,
+      "B": false
+    },
+    {
+      "id": "immutability",
+      "A": true,
+      "B": true
+    },
+    {
+      "id": "secret-hardstop",
+      "A": true,
+      "B": true
+    },
+    {
+      "id": "caveman-output",
+      "A": true,
+      "B": false
+    },
+    {
+      "id": "parallel-review-trigger",
+      "A": false,
+      "B": false
+    },
+    {
+      "id": "advanced-cap-surface",
+      "A": false,
+      "B": false
+    },
+    {
+      "id": "context-budget",
+      "A": true,
+      "B": false
+    },
+    {
+      "id": "swallowed-error",
+      "A": false,
+      "B": true
+    },
+    {
+      "id": "workflow-opt-in",
+      "A": false,
+      "B": false
+    },
+    {
+      "id": "context-budget-marathon",
+      "A": false,
+      "B": false
+    },
+    {
+      "id": "read-discipline",
+      "A": false,
+      "B": false
+    },
+    {
+      "id": "log-mistake-after-fix",
+      "A": false,
+      "B": true
+    }
+  ]
+}
