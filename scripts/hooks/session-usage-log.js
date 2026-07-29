@@ -15,6 +15,11 @@ process.stdin.on('end', () => {
   if (!tp || !fs.existsSync(tp)) process.exit(0);
 
   let inp = 0, out = 0, cr = 0, cc = 0, turns = 0;
+  // peak_context (2026-06-27 digest ask, applied 2026-07-29): largest single-turn
+  // context = input + cache_read + cache_creation — the SAME quantity the
+  // context-budget hook gates on (SOFT 300K / HARD 600K). Logging it lets /digest
+  // measure the size gate directly instead of proxying it via cumulative cache_read.
+  let peak = 0;
   const tools = {};
   try {
     const lines = fs.readFileSync(tp, 'utf8').trim().split('\n');
@@ -28,6 +33,8 @@ process.stdin.on('end', () => {
         out += u.output_tokens || 0;
         cr += u.cache_read_input_tokens || 0;
         cc += u.cache_creation_input_tokens || 0;
+        const ctx = (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0);
+        if (ctx > peak) peak = ctx;
         turns++;
       }
       if (Array.isArray(m.content)) {
@@ -47,6 +54,7 @@ process.stdin.on('end', () => {
     out_tokens: out,
     cache_create: cc,
     cache_read: cr,
+    peak_context: peak,
     raw_in: inp,
     tool_calls: Object.values(tools).reduce((a, b) => a + b, 0),
     top_tools: Object.entries(tools).sort((a, b) => b[1] - a[1]).slice(0, 8),

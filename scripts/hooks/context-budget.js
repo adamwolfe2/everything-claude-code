@@ -12,8 +12,14 @@ const SOFT = 300000; // nudge: compact / wrap up at clean boundary
 const HARD = 600000; // stop: start a fresh session now
 // Cumulative gates (evolve 2026-06-18): marathon LENGTH, not window size, is the burn
 // driver. Worst sessions (863t/188M, 594t/113M cache_read) never trip the size gate.
-const SOFT_TURNS = 800;
-const HARD_TURNS = 1500;
+// Recalibrated 2026-07-29 from July telemetry (306 sessions / 85,309 turns / 17.97B
+// cache_read; burn +51% MoM). The old 800/1500 gates were an order of magnitude too
+// high and near-silent: 800 fired on 8/306 sessions (3%) covering 11% of the month's
+// cache_read, 1500 on 1 session (2%). New gates: 400 turns reaches 80/306 sessions
+// (26%) carrying 60% of all cache_read; 700 stays rare at 11/306 (4%) / 13% of burn,
+// so the hard stop remains a signal rather than noise.
+const SOFT_TURNS = 400;
+const HARD_TURNS = 700;
 const SOFT_CR = 300000000; // cumulative session cache_read tokens
 const HARD_CR = 600000000;
 
