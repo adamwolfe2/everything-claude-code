@@ -13,11 +13,18 @@
 
 'use strict'
 
-// Matches the destructive forms only. Deliberately does NOT match safe reads
-// like `git stash list`, `git reset` (mixed, keeps worktree), `git checkout -b`,
-// `git checkout <branch>`, or `git clean -n` (dry run).
+// Matches the destructive forms only.
+//
+// Deliberately ALLOWED (inspection + recovery paths — blocking these would make
+// it harder to undo the very incident this guard exists to prevent):
+//   git stash list|show|pop|apply|branch, git reset (mixed/soft), git checkout <branch>,
+//   git checkout -b, git clean -n/--dry-run.
+// Deliberately BLOCKED: git stash (bare/push/save/-u/-k), git stash clear|drop
+// (they destroy the recovery point), reset --hard, checkout -- <path>,
+// clean -f, restore.
 const DESTRUCTIVE = [
-  /\bgit\s+stash\b(?!\s+(list|show)\b)/,
+  /\bgit\s+stash\s*(?:$|[;&|])/, // bare `git stash`
+  /\bgit\s+stash\s+(push|save|clear|drop|-)/,
   /\bgit\s+reset\s+--hard\b/,
   /\bgit\s+checkout\s+--\s/,
   /\bgit\s+clean\s+-[a-zA-Z]*f/,

@@ -7,7 +7,12 @@ const { isDestructive, isEscaped } = require(path.join(__dirname, '..', 'scripts
 const MUST_BLOCK = [
   'git stash',
   'git stash push -u',
+  'git stash save wip',
+  'git stash -u',
+  'git stash clear',
+  'git stash drop',
   'cd /x && git stash',
+  'git stash; npm test',
   'git reset --hard origin/main',
   'git checkout -- src/app.ts',
   'git clean -fd',
@@ -17,15 +22,23 @@ const MUST_BLOCK = [
   'rtk git stash',
 ]
 
+// Recovery + inspection paths must stay open: blocking these would make it
+// harder to undo the exact incident the guard exists to prevent.
 const MUST_ALLOW = [
   'git status',
   'git stash list',
   'git stash show',
+  'git stash pop',
+  'git stash apply',
+  'git stash apply stash@{0}',
+  'git stash branch recover',
   'git reset HEAD~1',
   'git reset',
+  'git reset --soft HEAD~1',
   'git checkout -b feat/x',
   'git checkout main',
   'git clean -n',
+  'git clean --dry-run',
   'git diff > /tmp/x.patch',
   'git commit -m "x"',
   'git add .',
