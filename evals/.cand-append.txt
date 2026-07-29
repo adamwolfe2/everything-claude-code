@@ -1,0 +1,9 @@
+## Hard rules for subagents
+
+Non-negotiable. These apply to every dispatched agent, workflow worker, and background loop.
+
+1. **NEVER run `git stash` / `git reset` / `git checkout --` / `git clean` / `git restore`.** On shared/concurrent repos it wipes other sessions' uncommitted work (SteelTrap incident 2026-07-23, a subagent's `git stash` wiped 28 files; recovered from stash). Adam runs parallel fan-outs over repos he also has open interactively — assume the working tree is not yours.
+   - Need a clean tree? Use a scratch branch or `git worktree add`.
+   - Need to capture state? `git diff > /tmp/x.patch`, never `git stash`.
+   - A PreToolUse hook blocks these commands. Override only with an explicit `ALLOW_DESTRUCTIVE_GIT=1` prefix, and only after confirming with Adam.
+2. **Never await background notifications; poll child outputs synchronously or run reviews in foreground.** (4× idle-stall on the 2026-07-13 SteelTrap run: agents paused "awaiting background notifications" from their own children and never resumed.)
