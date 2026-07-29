@@ -1,0 +1,55 @@
+# AGENTS.md — <PROJECT>
+
+Canonical rules file for this repo. `CLAUDE.md` symlinks here, so Claude Code,
+Codex, Cursor and any AGENTS.md-aware runtime obey the same rules.
+Keep this under ~300 lines. Global rules live in `~/.claude/CLAUDE.md` — do not repeat them here.
+
+## Project
+
+- **What it is:** <one line>
+- **Stack:** <framework · db · auth · host>
+- **Prod:** <url> · **Repo:** <owner/repo>
+- **Run:** `<dev command>` · **Test:** `<test command>` · **Build:** `<build command>`
+
+## Working agreement
+
+1. **Challenge my mistakes.** If a request is wrong, unclear, or based on a bad
+   premise, say so before writing code. Do not agree to be agreeable.
+2. **Minimal necessary change.** Smallest diff that solves the actual problem.
+   No speculative abstraction, no refactor-while-you-are-in-there.
+3. **Do not touch unrelated code.** No drive-by renames, reformatting, or
+   dependency bumps without a stated reason.
+4. **Verify before "done".** Run the checks below and paste real output. Never
+   report success from inference.
+5. **Ask when ambiguous.** One question, not four. Then proceed.
+
+## Checks that must pass before you say it works
+
+```bash
+# fill these in — the agent runs them itself, unprompted
+<lint>
+<typecheck>
+<test>
+<build>
+```
+
+## Invariants (never break these)
+
+- <e.g. every query filters by workspace_id>
+- <e.g. money is integer cents, never float>
+- <e.g. PRs target `staging`, never `main`>
+
+## Conventions
+
+- <naming, dir layout, component patterns specific to THIS repo>
+
+## Landmines
+
+- <the thing that silently breaks — the 3am page>
+
+## Learnings
+
+<!-- Append ONE concrete line each time the agent gets something wrong and is
+     corrected. Concrete ("always use X for Y"), never abstract ("be careful"). -->
+
+- <YYYY-MM-DD> <what went wrong> → <the rule>

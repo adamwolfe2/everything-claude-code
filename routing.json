@@ -488,6 +488,68 @@
       "tool": "mcpctl on <name>",
       "why": "MCPs are parked by default (sports-car rule). Summon one, use it, then `mcpctl off <name>`. claude.ai connectors toggle at claude.ai -> Settings -> Connectors.",
       "tier": "core"
+    },
+    {
+      "intent": "brainstorm-before-building",
+      "patterns": [
+        "i have an idea",
+        "not sure what to build",
+        "help me think through",
+        "what should this feature do",
+        "brainstorm",
+        "shape this idea",
+        "before i build",
+        "explore the design"
+      ],
+      "tool": "brainstorming skill -> then /plan",
+      "why": "Socratic one-question-at-a-time design dialogue; HARD GATE against coding before the design is approved. Terminal state is /plan. Vendored from obra/superpowers (MIT).",
+      "tier": "core"
+    },
+    {
+      "intent": "debug-root-cause",
+      "patterns": [
+        "this bug keeps coming back",
+        "fix didn't work",
+        "flaky test",
+        "unexpected behavior",
+        "why is this happening",
+        "test fails intermittently",
+        "debug this",
+        "it works locally"
+      ],
+      "tool": "systematic-debugging skill",
+      "why": "4-phase root-cause process; forbids symptom fixes. Pairs with bug-ripple (blast radius) and logic-ripple. Vendored from obra/superpowers (MIT).",
+      "tier": "core"
+    },
+    {
+      "intent": "repo-rules-file",
+      "patterns": [
+        "agents.md",
+        "claude.md for this repo",
+        "repo rules file",
+        "project rules",
+        "teach the agent this repo",
+        "add a learning",
+        "codex and claude same rules"
+      ],
+      "tool": "agentsmd [--apply] <repo>  (template: ~/everything-claude-code/templates/AGENTS.md.template)",
+      "why": "AGENTS.md is canonical, CLAUDE.md symlinks to it so Claude+Codex+Cursor share one truth. Dry-run by default; refuses to auto-merge divergent pairs.",
+      "tier": "core"
+    },
+    {
+      "intent": "library-api-truth",
+      "patterns": [
+        "what's the current api for",
+        "did this library change",
+        "hallucinated api",
+        "version-specific docs",
+        "latest docs for",
+        "does this method exist",
+        "unfamiliar library"
+      ],
+      "tool": "context7 MCP (live) \u2014 mcpctl on context7 if missing",
+      "why": "injects version-specific library docs into context instead of guessing APIs. Live on both accounts.",
+      "tier": "core"
     }
   ]
 }
