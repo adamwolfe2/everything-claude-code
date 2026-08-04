@@ -1,0 +1,4 @@
+interface:
+  display_name: "Thin Slice Plan"
+  short_description: "Planning-only safe slice breakdown"
+  default_prompt: "Use $thin-slice-plan to create or review a dependency-ordered slice plan only; stop before implementation unless the user switches to $safe-feature-slice."

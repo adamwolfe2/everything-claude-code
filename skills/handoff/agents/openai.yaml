@@ -1,0 +1,4 @@
+interface:
+  display_name: "Handoff"
+  short_description: "Write a next-session handoff"
+  default_prompt: "Use $handoff to gather repo status, verification state, and next steps into a concise HANDOFF.md."
