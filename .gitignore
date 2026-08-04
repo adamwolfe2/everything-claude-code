@@ -30,3 +30,6 @@ examples/sessions/*.tmp
 
 # Eval run artifacts
 evals/results/
+
+# agent worktrees (ephemeral)
+.claude/worktrees/

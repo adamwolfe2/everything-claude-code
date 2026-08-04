@@ -1,3 +1,8 @@
+---
+name: performance-audit
+description: Full-stack web performance audit playbook — cold start/serverless, N+1 and DB queries, bundle size, rendering, caching, resource hints, API response optimization. Ordered by impact with a fix-priority framework and Cursive-proven patterns. Use for "audit performance", "why is this slow", "speed up this app".
+---
+
 # Performance Audit Master Prompt
 
 Drop this into any project to find and fix speed issues. Ordered by impact.
