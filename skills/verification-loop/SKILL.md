@@ -1,3 +1,8 @@
+---
+name: verification-loop
+description: Verify a change actually works before reporting done — run the repo's own checks and paste real output. Use when about to claim success, or when the user asks to confirm a fix.
+---
+
 # Verification Loop Skill
 
 A comprehensive verification system for Claude Code sessions.
