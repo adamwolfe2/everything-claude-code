@@ -28,10 +28,14 @@ Inventories of agents, skills, and commands are NOT listed here — the session 
 
 ## Parallel execution
 
-ALWAYS dispatch independent agent work in a SINGLE message with multiple Agent tool calls. Common parallel pairs:
+Spawn subagents when the user explicitly asks for subagents, delegation, parallel agents, or parallel agent work and the active runtime allows it. That authorization applies to the current requested work; do not silently carry it into unrelated future work.
+
+When explicitly authorized, dispatch independent bounded work in a SINGLE message with multiple Agent tool calls. Give each agent exact scope and disjoint write ownership. Common parallel pairs:
 - `code-reviewer` + `security-reviewer` after implementation
 - Multiple subagents auditing different files
 - Research agents reading different docs
+
+Delegation does not expand tool permissions. In particular, it does not authorize any agent to open, focus, or control the user's browser. Each agent must use headless or read-only methods unless the user separately and explicitly requests browser control.
 
 ## Immediate auto-activation
 

@@ -1,6 +1,6 @@
 ---
 name: browser-harness
-description: "Always use browser-harness for any web interaction: automation, scraping, testing, or site/app work."
+description: "Control a browser only when the user explicitly requests browser interaction or a task cannot be verified without rendered-page behavior. Prefer isolated headless sessions; never attach to the user's Chrome unless they explicitly request control of their browser."
 ---
 
 # browser-harness
@@ -10,6 +10,14 @@ Direct browser control via CDP. For task-specific edits, use `agent-workspace/ag
 Domain skills are off by default. Set `BH_DOMAIN_SKILLS=1` to enable them; see the bottom section.
 
 **If `BH_DOMAIN_SKILLS=1` and the task is site-specific, read every file in the matching `$BH_AGENT_WORKSPACE/domain-skills/<site>/` directory before inventing an approach.**
+
+## Safety Boundary
+
+- Use static HTTP, APIs, CLIs, source inspection, or search before browser control when those methods can answer the request.
+- For rendered-page verification, prefer an isolated headless browser that does not focus windows, switch tabs, or use the user's logged-in session.
+- Do not attach to, launch, focus, navigate, or rearrange the user's Chrome unless the user explicitly asks for control of their browser in the current request.
+- Permission to research, test, scrape, or use subagents does not grant permission to control the user's Chrome.
+- If foreground control is genuinely required but was not requested, stop and ask before opening or attaching to Chrome.
 
 ## Usage
 
@@ -24,7 +32,9 @@ PY
 - First navigation is `new_tab(url)`, not `goto_url(url)`.
 - The normal local flow attaches to the running Chrome/Chromium CDP endpoint. No browser ids or local profile selection.
 
-## Local Chrome
+## Local Chrome (Explicit Request Only)
+
+Use this section only when the user explicitly asks to control their Chrome or current tabs. Do not use it as an automatic fallback when headless or read-only methods fail.
 
 If the daemon cannot connect, run diagnostics:
 
@@ -32,17 +42,17 @@ If the daemon cannot connect, run diagnostics:
 browser-harness --doctor
 ```
 
-If Chrome remote debugging is not enabled, the harness opens:
+If Chrome remote debugging is not enabled, the harness may open:
 
 ```text
 chrome://inspect/#remote-debugging
 ```
 
-Ask the user to tick "Allow remote debugging for this browser instance" and click Allow if Chrome shows a permission popup. Then retry the same `browser-harness` command.
+Ask the user to tick "Allow remote debugging for this browser instance" and click Allow if Chrome shows a permission popup. Then retry the same `browser-harness` command. Never trigger this setup during background work.
 
 ## Remote Browsers
 
-Use Browser Use cloud for headless servers, parallel sub-agents, or isolated work. Authenticate once:
+Use Browser Use cloud for explicitly authorized headless, parallel, or isolated browser work. Authenticate once:
 
 ```bash
 browser-harness auth login
