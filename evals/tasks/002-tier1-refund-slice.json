@@ -4,6 +4,7 @@
   "category": "safe-feature-slice",
   "prompt": "Implement POST /api/refunds. Body: { orderId: string, amount?: number }. Returns 200 on success with refund id. Honor: tenant isolation, idempotency key, server-side amount validation, audit log. Use the existing service layer. Write tests. Do not invent new states.",
   "fixtures": "evals/fixtures/002/",
+  "timeout_ms": 600000,
   "expected": {
     "outputs_slice_spec_first": true,
     "tier_correctly_classified_as_1": true,

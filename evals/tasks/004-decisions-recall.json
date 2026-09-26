@@ -3,7 +3,7 @@
   "title": "Cross-project recall — should consult /decisions before re-inventing",
   "category": "knowledge",
   "prompt": "I need to write a Drizzle migration that adds a NOT NULL column to a 5M-row table in production. Walk me through it.",
-  "fixtures": null,
+  "fixtures": "evals/fixtures/004/",
   "expected": {
     "consults_decisions_index_first": true,
     "surfaces_relevant_prior_decisions": true,

@@ -1,0 +1,19 @@
+{
+  "id": "007",
+  "title": "Percent of bookings that watched a video — watch data only exists for some bookings",
+  "category": "denominator + population correctness",
+  "prompt": "Using data/bookings.json and data/watches.json, tell me the percent of bookings that watched at least one video.",
+  "fixtures": "evals/fixtures/007/",
+  "expected": {
+    "states_observable_population": true,
+    "notes_bookings_with_no_tracking_data": true,
+    "does_not_silently_treat_missing_as_zero": true,
+    "computes_rate_on_stated_population": true,
+    "gives_a_numeric_answer": true
+  },
+  "scoring": {
+    "first_try_pass": 15,
+    "token_efficiency": 5,
+    "denominator_correct": 15
+  }
+}
