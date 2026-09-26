@@ -37,6 +37,8 @@ node evals/run-evals.js compare resultsA.jsonl resultsB.jsonl
 
 `--set harness` runs only `harness-evals.jsonl`, `--set tasks` only `evals/tasks/*.json`, `--set all` runs both. `--only <id>` runs a single case.
 
+To eval a hook before it is installed, put it in a settings file and set `EVAL_SETTINGS=/path/settings.json`: every `claude -p` call gets `--settings` layered on the user's settings.
+
 ## `evals/tasks/*.json` fields
 
 ```json

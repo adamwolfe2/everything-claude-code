@@ -93,6 +93,8 @@ function loadTaskCases() {
 // not just on the prose the model wrote afterward.
 function claude(prompt, { model, timeout = CASE_TIMEOUT_MS, cwd, maxTurns }) {
   const turnArgs = maxTurns ? ['--max-turns', String(maxTurns)] : []
+  // EVAL_SETTINGS=<file>: extra settings (e.g. a candidate hook) layered on the user's settings
+  if (process.env.EVAL_SETTINGS) turnArgs.push('--settings', process.env.EVAL_SETTINGS)
   return new Promise((resolve, reject) => {
     const child = execFile(
       'claude',

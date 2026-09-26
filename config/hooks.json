@@ -92,6 +92,16 @@
             "timeout": 30
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/adamwolfe/everything-claude-code/scripts/hooks/verify-gate.js\"",
+            "timeout": 15
+          }
+        ]
       }
     ],
     "SessionEnd": [
