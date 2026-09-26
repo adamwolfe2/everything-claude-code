@@ -473,7 +473,7 @@
       "tier": "core"
     },
     {
-      "intent": "need-an-mcp",
+      "id": "need-an-mcp",
       "patterns": [
         "need close crm",
         "need heyreach",
@@ -490,7 +490,7 @@
       "tier": "core"
     },
     {
-      "intent": "brainstorm-before-building",
+      "id": "brainstorm-before-building",
       "patterns": [
         "i have an idea",
         "not sure what to build",
@@ -506,7 +506,7 @@
       "tier": "core"
     },
     {
-      "intent": "debug-root-cause",
+      "id": "debug-root-cause",
       "patterns": [
         "this bug keeps coming back",
         "fix didn't work",
@@ -522,7 +522,7 @@
       "tier": "core"
     },
     {
-      "intent": "repo-rules-file",
+      "id": "repo-rules-file",
       "patterns": [
         "agents.md",
         "claude.md for this repo",
@@ -537,7 +537,7 @@
       "tier": "core"
     },
     {
-      "intent": "library-api-truth",
+      "id": "library-api-truth",
       "patterns": [
         "what's the current api for",
         "did this library change",
@@ -549,6 +549,147 @@
       ],
       "tool": "context7 MCP (live) \u2014 mcpctl on context7 if missing",
       "why": "injects version-specific library docs into context instead of guessing APIs. Live on both accounts.",
+      "tier": "core"
+    },
+    {
+      "id": "vendscout-jira",
+      "patterns": [
+        "jira ticket for this",
+        "file a ticket",
+        "log this in jira",
+        "ticket this",
+        "create the jira"
+      ],
+      "tool": "vendscout-jira skill",
+      "why": "VendScout eng work in vendhub auto-files ENG tickets (ADF AC, Story Points, Backlog-only, Ready For Review on PR); Adam never files by hand",
+      "tier": "core"
+    },
+    {
+      "id": "pack-stripe",
+      "patterns": [
+        "stripe",
+        "refund",
+        "payment intent",
+        "checkout session"
+      ],
+      "tool": "packs on stripe",
+      "pack": "stripe",
+      "why": "the stripe pack isn't loaded in this folder. Offer to run `packs on stripe`; it loads in the next session here",
+      "tier": "core"
+    },
+    {
+      "id": "pack-seo",
+      "patterns": [
+        "seo",
+        "schema markup",
+        "sitemap",
+        "backlink",
+        "search console"
+      ],
+      "tool": "packs on seo",
+      "pack": "seo",
+      "why": "the seo pack isn't loaded in this folder. Offer to run `packs on seo`; it loads in the next session here",
+      "tier": "core"
+    },
+    {
+      "id": "pack-cloudflare",
+      "patterns": [
+        "cloudflare",
+        "wrangler",
+        "durable object",
+        "turnstile"
+      ],
+      "tool": "packs on cloudflare",
+      "pack": "cloudflare",
+      "why": "the cloudflare pack isn't loaded in this folder. Offer to run `packs on cloudflare`; it loads in the next session here",
+      "tier": "core"
+    },
+    {
+      "id": "pack-security",
+      "patterns": [
+        "security scan",
+        "claude security",
+        "vuln scan",
+        "pentest"
+      ],
+      "tool": "packs on security",
+      "pack": "security",
+      "why": "the security pack isn't loaded in this folder. Offer to run `packs on security`; it loads in the next session here",
+      "tier": "core"
+    },
+    {
+      "id": "pack-video",
+      "patterns": [
+        "make a video",
+        "promo video",
+        "animation",
+        "motion graphic",
+        "hyperframes",
+        "explainer video"
+      ],
+      "tool": "packs on video",
+      "pack": "video",
+      "why": "the video pack isn't loaded in this folder. Offer to run `packs on video`; it loads in the next session here",
+      "tier": "core"
+    },
+    {
+      "id": "pack-marketing",
+      "patterns": [
+        "landing page copy",
+        "conversion rate",
+        "cold email",
+        "pricing page",
+        "launch plan",
+        "onboarding flow"
+      ],
+      "tool": "packs on marketing",
+      "pack": "marketing",
+      "why": "the marketing pack isn't loaded in this folder. Offer to run `packs on marketing`; it loads in the next session here",
+      "tier": "core"
+    },
+    {
+      "id": "pack-jira",
+      "patterns": [
+        "jira",
+        "confluence"
+      ],
+      "tool": "packs on jira",
+      "pack": "jira",
+      "why": "the jira pack isn't loaded in this folder. Offer to run `packs on jira`; it loads in the next session here",
+      "tier": "core"
+    },
+    {
+      "id": "pack-asana",
+      "patterns": [
+        "asana"
+      ],
+      "tool": "packs on asana",
+      "pack": "asana",
+      "why": "the asana pack isn't loaded in this folder. Offer to run `packs on asana`; it loads in the next session here",
+      "tier": "core"
+    },
+    {
+      "id": "pack-vendhub-db",
+      "patterns": [
+        "prod db",
+        "production database",
+        "query vendhub"
+      ],
+      "tool": "packs on vendhub-db",
+      "pack": "vendhub-db",
+      "why": "the vendhub-db pack isn't loaded in this folder. Offer to run `packs on vendhub-db`; it loads in the next session here",
+      "tier": "core"
+    },
+    {
+      "id": "pack-vercel",
+      "patterns": [
+        "vercel",
+        "deploy logs",
+        "preview deployment"
+      ],
+      "tool": "packs on vercel",
+      "pack": "vercel",
+      "why": "the vercel pack isn't loaded in this folder. Offer to run `packs on vercel`; it loads in the next session here",
       "tier": "core"
     }
   ]

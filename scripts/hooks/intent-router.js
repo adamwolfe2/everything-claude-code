@@ -21,6 +21,19 @@ const LOG = path.join(os.homedir(), '.claude', 'routing-log.jsonl');
 // bare affirmatives / steers — never route these (they refer to a prior proposal)
 const SKIP = new Set(['yes','go','ship','do it','lgtm','proceed','run it','sounds good','ok','okay','sure','y','yep','steer','no','wait','status','next','dash','health','push','done']);
 
+const PACKS_STATE = path.join(os.homedir(), '.claude', 'state', 'packs-applied.json');
+
+/** Packs `packs sync` applied to the project containing cwd (longest path prefix wins). */
+function loadedPacks(cwd) {
+  let state;
+  try { state = JSON.parse(fs.readFileSync(PACKS_STATE, 'utf8')); }
+  catch (error) { return new Set(); } // no sync yet = nothing loaded; router still works
+  const root = Object.keys(state)
+    .filter((p) => cwd === p || cwd.startsWith(`${p}/`))
+    .sort((a, b) => b.length - a.length)[0];
+  return new Set(root ? state[root].packs || [] : []);
+}
+
 let d = '';
 process.stdin.on('data', (c) => (d += c));
 process.stdin.on('end', () => {
@@ -32,7 +45,9 @@ process.stdin.on('end', () => {
 
   let map;
   try { map = JSON.parse(fs.readFileSync(ROUTING, 'utf8')); } catch { process.exit(0); }
-  const routes = (map && map.routes) || [];
+  // pack routes only fire when that pack is NOT already loaded for this folder
+  const loaded = loadedPacks(input.cwd || process.cwd());
+  const routes = ((map && map.routes) || []).filter((r) => !r.pack || !loaded.has(r.pack));
 
   // score each route by how many of its patterns appear; longer patterns = more specific
   const scored = [];
