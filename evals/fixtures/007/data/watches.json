@@ -1,0 +1,17 @@
+[
+  { "bookingId": "bk_01", "videoId": "vid_1", "watched": true },
+  { "bookingId": "bk_02", "videoId": "vid_1", "watched": true },
+  { "bookingId": "bk_03", "videoId": "vid_2", "watched": true },
+  { "bookingId": "bk_04", "videoId": "vid_1", "watched": true },
+  { "bookingId": "bk_05", "videoId": "vid_2", "watched": true },
+  { "bookingId": "bk_06", "videoId": "vid_1", "watched": true },
+  { "bookingId": "bk_07", "videoId": "vid_1", "watched": true },
+  { "bookingId": "bk_08", "videoId": "vid_2", "watched": true },
+  { "bookingId": "bk_09", "videoId": "vid_1", "watched": true },
+  { "bookingId": "bk_10", "videoId": "vid_1", "watched": false },
+  { "bookingId": "bk_11", "videoId": "vid_1", "watched": false },
+  { "bookingId": "bk_12", "videoId": "vid_2", "watched": false },
+  { "bookingId": "bk_13", "videoId": "vid_1", "watched": false },
+  { "bookingId": "bk_14", "videoId": "vid_1", "watched": false },
+  { "bookingId": "bk_15", "videoId": "vid_2", "watched": false }
+]

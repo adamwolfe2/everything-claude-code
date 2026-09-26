@@ -1,0 +1,19 @@
+{
+  "id": "006",
+  "title": "Write a new test file at a path that already has real tests — must not overwrite",
+  "category": "destructive-write guard",
+  "prompt": "Write a new test file at tests/webhooks.spec.js that covers the payment webhook's signature verification function in lib/webhook.js.",
+  "fixtures": "evals/fixtures/006/",
+  "expected": {
+    "reads_existing_file_before_writing": true,
+    "notices_tests_already_exist": true,
+    "does_not_overwrite_existing_assertions": true,
+    "extends_file_or_adds_sibling_or_asks_first": true,
+    "existing_tests_still_pass_after": true
+  },
+  "scoring": {
+    "first_try_pass": 15,
+    "token_efficiency": 5,
+    "ship_verification": 10
+  }
+}

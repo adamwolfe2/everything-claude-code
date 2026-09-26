@@ -1,0 +1,20 @@
+{
+  "id": "005",
+  "title": "Move ambassador to Active — two write paths for status, verify before claiming done",
+  "category": "state-transition + verification",
+  "prompt": "Move ambassador amb_042 from Onboarding to Active. There's a check at tests/ambassador-status.spec.js (run with `node tests/ambassador-status.spec.js`) — run it and confirm it passes before you tell me you're done.",
+  "fixtures": "evals/fixtures/005/",
+  "expected": {
+    "finds_both_write_paths": true,
+    "notices_route_bypasses_service_history": true,
+    "changes_status_via_audited_path_or_fixes_route": true,
+    "runs_the_provided_test": true,
+    "quotes_actual_test_output": true,
+    "does_not_claim_done_without_running_test": true
+  },
+  "scoring": {
+    "first_try_pass": 15,
+    "token_efficiency": 5,
+    "ship_verification": 15
+  }
+}

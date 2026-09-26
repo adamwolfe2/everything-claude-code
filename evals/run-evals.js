@@ -10,9 +10,16 @@
 //      and evals/tasks/*.json (expected boolean map + weighted scoring).
 //   2. Runs each case's prompt through headless `claude -p` (the CANDIDATE —
 //      it loads whatever harness state is currently on disk, so A/B = run
-//      once per branch/state with different --label).
+//      once per branch/state with different --label). A case with a
+//      "fixtures" dir gets its own throwaway copy (cwd'd into it) so it can
+//      read/write real files without touching the checked-in fixture or
+//      colliding with other cases. A case can set "timeout_ms" to override
+//      the default 180s wall-clock budget (some prompts legitimately run
+//      long multi-turn tool use).
 //   3. Judges each response with a cheap model via `claude -p --model <judge>`,
 //      forced to emit strict JSON. No self-grading: judge ≠ candidate session.
+//      The judge sees the candidate's text response PLUS a tool-call log and
+//      fixture git-diff (what actually ran/changed) — not just prose.
 //   4. Writes evals/results/<label>-<stamp>.jsonl + prints a composite score.
 //   5. `compare` prints per-case deltas + composite delta between two runs.
 //
@@ -22,8 +29,9 @@
 
 'use strict'
 
-const { execFile } = require('child_process')
+const { execFile, execSync } = require('child_process')
 const fs = require('fs')
+const os = require('os')
 const path = require('path')
 
 const EVALS_DIR = __dirname
@@ -79,19 +87,77 @@ function loadTaskCases() {
     .filter(Boolean)
 }
 
-function claude(prompt, { model, timeout = CASE_TIMEOUT_MS }) {
+// Runs claude headless via stream-json so we can recover the tool-call log
+// (which tools ran, what they touched) alongside the final text response —
+// the judge needs that evidence for tasks that hinge on verification/scope,
+// not just on the prose the model wrote afterward.
+function claude(prompt, { model, timeout = CASE_TIMEOUT_MS, cwd, maxTurns }) {
+  const turnArgs = maxTurns ? ['--max-turns', String(maxTurns)] : []
   return new Promise((resolve, reject) => {
     const child = execFile(
       'claude',
-      ['-p', prompt, '--model', model, '--output-format', 'text'],
-      { timeout, maxBuffer: 10 * 1024 * 1024 },
+      ['-p', prompt, '--model', model, '--output-format', 'stream-json', '--verbose', ...turnArgs],
+      { timeout, cwd, maxBuffer: 20 * 1024 * 1024 },
       (err, stdout, stderr) => {
         if (err) return reject(new Error(`claude failed: ${err.message} ${String(stderr).slice(0, 200)}`))
-        resolve(String(stdout).trim())
+        resolve(parseStreamJson(String(stdout)))
       }
     )
+    child.stdin.end() // no stdin coming; skip the multi-second "waiting for stdin" delay
     child.on('error', reject)
   })
+}
+
+function parseStreamJson(raw) {
+  const toolCalls = []
+  let text = ''
+  for (const line of raw.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    let evt
+    try {
+      evt = JSON.parse(trimmed)
+    } catch (error) {
+      continue // stream-json interleaves non-JSON progress lines; they carry no evidence
+    }
+    if (evt.type === 'assistant' && evt.message && Array.isArray(evt.message.content)) {
+      for (const block of evt.message.content) {
+        if (block.type === 'tool_use') {
+          const input = JSON.stringify(block.input || {})
+          toolCalls.push(`${block.name}(${input.length > 200 ? input.slice(0, 200) + '…' : input})`)
+        }
+      }
+    }
+    if (evt.type === 'result') text = String(evt.result || '')
+  }
+  return { text, toolCalls }
+}
+
+// Copies a case's fixture dir to a throwaway tmp dir so the case can read/write
+// realistic files without mutating the checked-in fixtures or colliding with
+// other cases running concurrently. Snapshots into a git repo so we can read
+// back exactly what the candidate touched (evidence for the judge).
+function prepareFixture(kase) {
+  // Every case runs in a throwaway dir, fixture or not: a candidate that writes files must never
+  // touch the harness repo the runner lives in (it did: stray demo pages from design cases).
+  const dst = fs.mkdtempSync(path.join(os.tmpdir(), `eval-${kase.id}-`))
+  if (typeof kase.fixtures === 'string') {
+    const src = path.join(EVALS_DIR, '..', kase.fixtures)
+    if (!fs.existsSync(src)) throw new Error(`fixture dir missing: ${kase.fixtures}`)
+    fs.cpSync(src, dst, { recursive: true })
+  }
+  execSync('git init -q && git add -A && git -c user.email=eval@local -c user.name=eval commit -q --allow-empty -m base', { cwd: dst })
+  return dst
+}
+
+function buildEvidence(toolCalls, fixtureDir) {
+  const parts = []
+  if (toolCalls.length) parts.push('Tool calls made:\n' + toolCalls.join('\n').slice(0, 3000))
+  if (fixtureDir) {
+    const diff = execSync('git diff --stat; echo ---; git status --porcelain', { cwd: fixtureDir }).toString().trim()
+    if (diff && diff !== '---') parts.push('Fixture file changes (git diff/status):\n' + diff.slice(0, 2000))
+  }
+  return parts.join('\n\n')
 }
 
 function extractJson(text) {
@@ -112,7 +178,7 @@ async function judgeHarnessCase(kase, response, judgeModel) {
     'Does the response satisfy the assertion? Judge literally; partial credit is a fail.',
     'Output exactly: {"pass": true|false, "reason": "<one sentence>"}',
   ].join('\n')
-  const verdict = extractJson(await claude(prompt, { model: judgeModel }))
+  const verdict = extractJson((await claude(prompt, { model: judgeModel })).text)
   return { pass: !!verdict.pass, reason: String(verdict.reason || ''), earned: verdict.pass ? 1 : 0, possible: 1 }
 }
 
@@ -129,7 +195,7 @@ async function judgeTaskCase(kase, response, judgeModel) {
     '---',
     `Output exactly one JSON object with all ${keys.length} keys and boolean values. Judge literally; if unsure, false.`,
   ].join('\n')
-  const verdict = extractJson(await claude(prompt, { model: judgeModel }))
+  const verdict = extractJson((await claude(prompt, { model: judgeModel })).text)
   const results = Object.fromEntries(keys.map((k) => [k, verdict[k] === true]))
   const hit = keys.filter((k) => results[k]).length
   const weight = Object.values(kase.scoring || {}).reduce((a, b) => a + b, 0) / 10 || 1
@@ -144,15 +210,22 @@ async function judgeTaskCase(kase, response, judgeModel) {
 
 async function runCase(kase, opts) {
   const started = Date.now()
+  const timeout = kase.timeout_ms || CASE_TIMEOUT_MS
+  let fixtureDir = null
   try {
-    const response = await claude(kase.prompt, { model: opts.model })
+    fixtureDir = prepareFixture(kase)
+    const { text, toolCalls } = await claude(kase.prompt, { model: opts.model, timeout, cwd: fixtureDir, maxTurns: kase.max_turns })
+    const evidence = buildEvidence(toolCalls, fixtureDir)
+    const graded = evidence ? `${text}\n\n---TOOL CALL LOG (for grading, not written by the candidate)---\n${evidence}` : text
     const judged =
       kase._format === 'task'
-        ? await judgeTaskCase(kase, response, opts.judge)
-        : await judgeHarnessCase(kase, response, opts.judge)
+        ? await judgeTaskCase(kase, graded, opts.judge)
+        : await judgeHarnessCase(kase, graded, opts.judge)
     return { id: kase.id, format: kase._format, ...judged, ms: Date.now() - started, error: null }
   } catch (err) {
     return { id: kase.id, format: kase._format, pass: false, earned: 0, possible: kase._format === 'task' ? Object.values(kase.scoring || {}).reduce((a, b) => a + b, 0) / 10 || 1 : 1, reason: `RUNNER ERROR: ${err.message}`, ms: Date.now() - started, error: err.message }
+  } finally {
+    if (fixtureDir) fs.rmSync(fixtureDir, { recursive: true, force: true })
   }
 }
 
