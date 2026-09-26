@@ -11,6 +11,7 @@ const fs = require('fs');
 
 const testsDir = __dirname;
 const testFiles = [
+  'workflows/parallel-review.test.js',
   'lib/utils.test.js',
   'lib/package-manager.test.js',
   'hooks/hooks.test.js',
