@@ -49,8 +49,7 @@ The closed-loop self-improving build system that sits on top of the everything-c
 1. `/qa` — Codex CLI browser walkthrough
 2. `/design-qa` for visual/a11y/perf gate on UI work
 3. `/cap` — preflight → commit → push → ship-verify (CI green + Vercel ready + URL 200)
-4. `compact-trigger` hook nudges `/compact` after push
-5. `taste-lint` Stop hook flags any sloppy patterns at session end
+4. `taste-lint` Stop hook tells Claude about serious issues in lines it added (JSON, once per finding set)
 
 ### Adding to the knowledge base
 - After a hard-won decision: `/decisions add "<title>"`

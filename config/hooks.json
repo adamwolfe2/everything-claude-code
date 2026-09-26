@@ -1,0 +1,115 @@
+{
+  "_note": "Canonical non-agent-nook hooks for ~/.claude/settings.json (shared by all 3 accounts). Apply with: node scripts/apply-hooks.mjs [--dry-run]. Matchers must be exact tool names ('Bash', 'Edit|Write|MultiEdit') or '*': Claude Code treats any other character as a regex against the TOOL NAME, so expressions like tool == \"Bash\" never match and a '||' matches everything. Output reaches Claude only via JSON additionalContext/decision (or exit 2); plain stdout/stderr on exit 0 goes to the debug log.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rtk hook claude"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/adamwolfe/everything-claude-code/scripts/hooks/scope-check.js\""
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/adamwolfe/everything-claude-code/scripts/hooks/read-discipline.js\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/adamwolfe/everything-claude-code/scripts/hooks/mistake-log-nudge.js\""
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/adamwolfe/everything-claude-code/scripts/hooks/pre-compact.js\""
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/adamwolfe/everything-claude-code/scripts/hooks/session-start.js\""
+          },
+          {
+            "type": "command",
+            "command": "node \"/Users/adamwolfe/everything-claude-code/scripts/suggest.js\""
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/adamwolfe/everything-claude-code/scripts/hooks/context-budget.js\""
+          },
+          {
+            "type": "command",
+            "command": "node \"/Users/adamwolfe/everything-claude-code/scripts/hooks/intent-router.js\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/adamwolfe/everything-claude-code/scripts/hooks/taste-lint.js\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/adamwolfe/everything-claude-code/scripts/hooks/session-end.js\"",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "node \"/Users/adamwolfe/everything-claude-code/scripts/hooks/session-usage-log.js\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

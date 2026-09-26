@@ -1,60 +1,60 @@
 #!/usr/bin/env node
-// PostToolUse(Edit|Write): gentle nudge to log a mistake when a bug-fix is detected
-// via recent git commit message / branch name OR session-transcript context.
-// Lightweight: a nudge, not a blocker. 20-min cooldown so it never spams.
-// Convention (matches other hooks here): message -> stderr; pass stdin through stdout.
+// PostToolUse(Edit|Write|MultiEdit): nudge Claude to /log-mistake when the session looks like a bug fix.
+// Signal: fix/bug/patch/hotfix in the last 3 commit subjects or the branch name, or bug language in
+// the transcript tail. Fires at most ONCE per session (per session_id), via additionalContext so
+// Claude actually sees it (plain stdout/stderr on exit 0 never reaches the model).
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const cp = require('child_process');
 
+const STATE_DIR = path.join(os.homedir(), '.claude', 'state', 'mistake-nudge');
+const COMMIT_RX = /\b(fix|bug|patch|hotfix)/i;
+const TALK_RX = /(\bbug\b|broken|doesn'?t work|not working|failing|regression|crash|root cause)/;
+
+function git(cwd, args) {
+  try {
+    return cp.execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  } catch (error) {
+    return ''; // not a git repo or no commits: no signal, which is the correct answer
+  }
+}
+
+function detect(input) {
+  const cwd = input.cwd || process.cwd();
+  if (COMMIT_RX.test(git(cwd, ['log', '-3', '--format=%s']))) return 'recent commit';
+  if (COMMIT_RX.test(git(cwd, ['rev-parse', '--abbrev-ref', 'HEAD']))) return 'branch name';
+  const tp = input.transcript_path;
+  if (tp && fs.existsSync(tp)) {
+    const size = fs.statSync(tp).size;
+    const fd = fs.openSync(tp, 'r');
+    const len = Math.min(size, 64 * 1024); // tail only; transcripts reach hundreds of MB
+    const buf = Buffer.alloc(len);
+    fs.readSync(fd, buf, 0, len, size - len);
+    fs.closeSync(fd);
+    if (TALK_RX.test(buf.toString('utf8').toLowerCase())) return 'session context';
+  }
+  return null;
+}
+
 let d = '';
 process.stdin.on('data', c => (d += c));
 process.stdin.on('end', () => {
-  let i = {};
-  try { i = JSON.parse(d); } catch { process.stdout.write(d); process.exit(0); }
-  const tool = i.tool_name || '';
-  if (tool !== 'Edit' && tool !== 'Write') { process.stdout.write(d); process.exit(0); }
-
-  const cwd = i.cwd || process.cwd();
-  const rx = /\b(fix|bug|patch|hotfix)/i;
-  let signal = false, reason = '';
-
-  // 1) recent commit messages, then branch name
-  try {
-    const log = cp.execSync('git -C "' + cwd + '" log -3 --format=%s 2>/dev/null', { encoding: 'utf8' });
-    if (rx.test(log)) { signal = true; reason = 'recent commit'; }
-    if (!signal) {
-      const br = cp.execSync('git -C "' + cwd + '" rev-parse --abbrev-ref HEAD 2>/dev/null', { encoding: 'utf8' });
-      if (rx.test(br)) { signal = true; reason = 'branch name'; }
-    }
-  } catch {}
-
-  // 2) transcript context (last ~40 lines)
-  if (!signal && i.transcript_path && fs.existsSync(i.transcript_path)) {
-    try {
-      const tail = fs.readFileSync(i.transcript_path, 'utf8').trim().split('\n').slice(-40).join(' ').toLowerCase();
-      if (/(\bbug\b|broken|doesn'?t work|not working|failing|regression|crash|throws|throwing|error when|root cause)/.test(tail)) {
-        signal = true; reason = 'session context';
-      }
-    } catch {}
+  let input;
+  try { input = JSON.parse(d); } catch (error) {
+    process.stderr.write(`[mistake-log] bad hook input: ${error.message}\n`);
+    return;
   }
-
-  if (!signal) { process.stdout.write(d); process.exit(0); }
-
-  // cooldown: don't nudge more than once per 20 min
-  const flag = path.join(os.tmpdir(), 'mistake-nudge.flag');
-  try {
-    const last = fs.existsSync(flag) ? (parseInt(fs.readFileSync(flag, 'utf8'), 10) || 0) : 0;
-    const now = Date.now();
-    if (now - last < 20 * 60 * 1000) { process.stdout.write(d); process.exit(0); }
-    fs.writeFileSync(flag, String(now));
-  } catch {}
-
-  console.error('[mistake-log] Bug fix detected (' + reason + '). Before moving on: '
-    + '(1) /log-mistake — root cause + the CLASS of mistake to prevent; '
-    + '(2) add a one-line regression eval to ~/.claude/evals/. '
-    + 'mistakes.jsonl is the flywheel fuel that /digest + harness-evolve learn from — keep it fed.');
-  process.stdout.write(d);
-  process.exit(0);
+  const flag = path.join(STATE_DIR, String(input.session_id || 'unknown'));
+  if (fs.existsSync(flag)) return;
+  const reason = detect(input);
+  if (!reason) return;
+  fs.mkdirSync(STATE_DIR, { recursive: true });
+  fs.writeFileSync(flag, new Date().toISOString());
+  process.stdout.write(JSON.stringify({
+    hookSpecificOutput: {
+      hookEventName: 'PostToolUse',
+      additionalContext: `[mistake-log] This session looks like a bug fix (${reason}). When the fix is verified, run /log-mistake: root cause plus the CLASS of mistake and one enforceable check (lint rule, hook, test, or type) that would have caught it.`,
+    },
+  }));
 });

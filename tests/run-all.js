@@ -15,6 +15,7 @@ const testFiles = [
   'lib/package-manager.test.js',
   'hooks/hooks.test.js',
   'lib/packs.test.mjs',
+  'hooks/hook-layer.test.js',
   'rules/interaction-safety.test.js'
 ];
 

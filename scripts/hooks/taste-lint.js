@@ -1,35 +1,59 @@
 #!/usr/bin/env node
-// Stop hook — scans modified files at session end for taste violations.
-// Warns only. Reports: emojis, console.log, `as any`, `@ts-ignore`, obvious mutation patterns,
-// catch{}, hardcoded secrets (heuristic), TODO/FIXME without ticket.
+// Stop hook: scans lines ADDED in the working tree (tracked diff vs HEAD + untracked files) for
+// taste violations and tells Claude about serious ones (critical/high) via additionalContext.
+// Stop output on a plain exit 0 never reaches the model, so this hook speaks JSON.
+// Guards against loops and noise: skips when stop_hook_active, reports each unique finding set
+// once per session, and ignores pre-existing lines (only what this work added).
 
-const { execSync } = require('child_process')
+const { execFileSync } = require('child_process')
+const crypto = require('crypto')
 const fs = require('fs')
+const os = require('os')
 const path = require('path')
 const telemetry = require(path.join(__dirname, '..', 'lib', 'telemetry.js'))
 
-function safe(cmd) {
+const STATE_DIR = path.join(os.homedir(), '.claude', 'state', 'taste-lint')
+const REPORT = new Set(['critical', 'high'])
+const CODE = /\.(ts|tsx|js|jsx)$/
+
+function git(cwd, args) {
   try {
-    return execSync(cmd, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
-  } catch {
-    return null
+    return execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 64 * 1024 * 1024 })
+  } catch (error) {
+    return null // not a repo / no HEAD: caller treats as nothing to scan
   }
 }
 
-function modifiedFiles() {
-  const out = safe('git diff --name-only HEAD')
-  if (!out) return []
+/** Map of file -> [{line, text}] for lines added relative to HEAD, plus all lines of new files. */
+function addedLines(cwd) {
+  const out = new Map()
+  const diff = git(cwd, ['diff', '-U0', '--no-color', 'HEAD', '--', '*.ts', '*.tsx', '*.js', '*.jsx']) || ''
+  let file = null
+  let lineNo = 0
+  for (const l of diff.split('\n')) {
+    if (l.startsWith('+++ ')) { file = l.slice(4).replace(/^b\//, ''); continue }
+    const h = l.match(/^@@ -\d+(?:,\d+)? \+(\d+)/)
+    if (h) { lineNo = Number(h[1]); continue }
+    if (file && file !== '/dev/null' && l.startsWith('+')) {
+      out.set(file, [...(out.get(file) || []), { line: lineNo, text: l.slice(1) }])
+      lineNo += 1
+    }
+  }
+  const untracked = (git(cwd, ['ls-files', '--others', '--exclude-standard']) || '').split('\n').filter(f => CODE.test(f))
+  for (const f of untracked) {
+    const abs = path.join(cwd, f)
+    if (!fs.existsSync(abs) || fs.statSync(abs).size > 512 * 1024) continue
+    out.set(f, fs.readFileSync(abs, 'utf8').split('\n').map((text, i) => ({ line: i + 1, text })))
+  }
   return out
-    .split('\n')
-    .filter(f => /\.(ts|tsx|js|jsx)$/.test(f) && fs.existsSync(f))
 }
 
 const RULES = [
   {
     name: 'emoji',
     pattern: /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u,
-    severity: 'low',
-    message: 'Emoji found',
+    severity: 'high',
+    message: 'Emoji (hard rule: Lucide icons, no emojis)',
   },
   {
     name: 'console.log',
@@ -75,61 +99,53 @@ const RULES = [
   },
 ]
 
-function scanFile(filePath) {
+function scanLines(file, lines) {
   const findings = []
-  const lines = fs.readFileSync(filePath, 'utf8').split('\n')
-  lines.forEach((line, idx) => {
-    if (line.trim().startsWith('//') || line.trim().startsWith('*')) return
+  for (const { line, text } of lines) {
+    const t = text.trim()
+    if (t.startsWith('//') || t.startsWith('*')) continue
     for (const rule of RULES) {
-      if (rule.pattern.test(line)) {
-        findings.push({
-          file: filePath,
-          line: idx + 1,
-          rule: rule.name,
-          severity: rule.severity,
-          message: rule.message,
-          excerpt: line.trim().slice(0, 100),
-        })
+      if (rule.pattern.test(text)) {
+        findings.push({ file, line, rule: rule.name, severity: rule.severity, message: rule.message })
       }
     }
-  })
+  }
   return findings
 }
 
 let buf = ''
 process.stdin.on('data', c => (buf += c))
 process.stdin.on('end', () => {
-  // Only run in git repos
-  if (!safe('git rev-parse --git-dir')) {
-    return process.stdout.write(buf)
-  }
-  const files = modifiedFiles()
-  if (files.length === 0) return process.stdout.write(buf)
-
-  const allFindings = []
-  for (const f of files) {
-    try {
-      allFindings.push(...scanFile(f))
-    } catch {}
-  }
-
-  if (allFindings.length === 0) {
-    process.stdout.write(buf)
+  let input
+  try { input = JSON.parse(buf) } catch (error) {
+    process.stderr.write(`[taste] bad hook input: ${error.message}\n`)
     return
   }
+  if (input.stop_hook_active) return
+  const cwd = input.cwd || process.cwd()
+  if (!git(cwd, ['rev-parse', '--git-dir'])) return
 
+  const all = [...addedLines(cwd)].flatMap(([file, lines]) => scanLines(file, lines))
+  if (all.length === 0) return
   const bySeverity = { critical: 0, high: 0, med: 0, low: 0 }
-  for (const f of allFindings) bySeverity[f.severity]++
+  for (const f of all) bySeverity[f.severity]++
+  telemetry.logEvent('taste.findings', { count: all.length, bySeverity })
 
-  process.stderr.write(`\n[taste] ${allFindings.length} finding(s) across ${files.length} modified file(s):\n`)
-  process.stderr.write(`[taste]   critical: ${bySeverity.critical}  high: ${bySeverity.high}  med: ${bySeverity.med}  low: ${bySeverity.low}\n`)
-  for (const f of allFindings.slice(0, 15)) {
-    process.stderr.write(`[taste]   [${f.severity}] ${f.file}:${f.line} — ${f.message}\n`)
-  }
-  if (allFindings.length > 15) {
-    process.stderr.write(`[taste]   ... ${allFindings.length - 15} more\n`)
-  }
-  process.stderr.write(`[taste] WARN ONLY — session continues. Fix before /cap.\n\n`)
-  telemetry.logEvent('taste.findings', { count: allFindings.length, bySeverity, files: files.length })
-  process.stdout.write(buf)
+  const serious = all.filter(f => REPORT.has(f.severity))
+  if (serious.length === 0) return
+  const key = crypto.createHash('sha1').update(serious.map(f => `${f.file}:${f.line}:${f.rule}`).join('|')).digest('hex')
+  const stateFile = path.join(STATE_DIR, `${input.session_id || 'unknown'}.json`)
+  const seen = fs.existsSync(stateFile) ? JSON.parse(fs.readFileSync(stateFile, 'utf8')) : []
+  if (seen.includes(key)) return
+  fs.mkdirSync(STATE_DIR, { recursive: true })
+  fs.writeFileSync(stateFile, JSON.stringify([...seen, key]))
+
+  const lines = serious.slice(0, 10).map(f => `- [${f.severity}] ${f.file}:${f.line} ${f.message}`)
+  const more = serious.length > 10 ? `\n- ... ${serious.length - 10} more` : ''
+  process.stdout.write(JSON.stringify({
+    hookSpecificOutput: {
+      hookEventName: 'Stop',
+      additionalContext: `[taste] ${serious.length} serious finding(s) in lines added to ${cwd}:\n${lines.join('\n')}${more}\nFix them, or say in one line why each is intentional. Do not claim done with these open.`,
+    },
+  }))
 })
