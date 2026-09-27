@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "description": "Pinned deps for scripts/hooks/ui-gate.js. Install: npm ci --prefix vendor",
+  "dependencies": {
+    "agent-browser": "0.38.1",
+    "axe-core": "4.13.0"
+  }
+}

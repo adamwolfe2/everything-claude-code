@@ -17,6 +17,7 @@ const testFiles = [
   'lib/packs.test.mjs',
   'hooks/hook-layer.test.js',
   'hooks/verify-gate.test.js',
+  'hooks/ui-gate.test.js',
   'rules/interaction-safety.test.js'
 ];
 

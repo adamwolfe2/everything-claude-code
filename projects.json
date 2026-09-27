@@ -247,7 +247,8 @@
       "stack": "Next",
       "packs": [
         "seo",
-        "marketing"
+        "marketing",
+        "ui-gate"
       ]
     },
     {
@@ -290,7 +291,10 @@
     {
       "id": "aletto-showcase",
       "path": "~/aletto-showcase",
-      "stack": "Next (auto-registered 2026-09-26)"
+      "stack": "Next (auto-registered 2026-09-26)",
+      "conventions": [
+        "Dark by design (allowed exception to the no-dark rule)"
+      ]
     },
     {
       "id": "am-collective-health",
@@ -465,7 +469,10 @@
     {
       "id": "sendmore",
       "path": "~/sendmore",
-      "stack": "Next (auto-registered 2026-09-26)"
+      "stack": "Next (auto-registered 2026-09-26)",
+      "packs": [
+        "ui-gate"
+      ]
     },
     {
       "id": "superpower-mentors-vsl",
@@ -592,6 +599,9 @@
         "product-marketing"
       ],
       "why": "CRO, launch, pricing, cold email, onboarding copy"
+    },
+    "ui-gate": {
+      "why": "UI gate Stop hook: renders the dev page at 390/1440 after UI edits (scripts/hooks/ui-gate.js reads this; pilot)"
     }
   }
 }
