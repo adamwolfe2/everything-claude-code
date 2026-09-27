@@ -146,9 +146,9 @@ async function run(input) {
   if (st.hash === hash) return { decision: 'allow', why: 'diff already checked' };
   const save = (extra) => { fs.mkdirSync(path.dirname(stateFile), { recursive: true }); fs.writeFileSync(stateFile, JSON.stringify({ ...st, hash, at: new Date().toISOString(), ...extra })); };
   save(); // once per diff, even if the check below fails
-  if (!fs.existsSync(AB)) return { decision: 'allow', why: 'agent-browser not installed (npm ci --prefix vendor)' };
   const url = await devUrl(repo);
   if (!url) return { decision: 'allow', why: 'no dev server' };
+  if (!fs.existsSync(AB)) return { decision: 'allow', why: 'agent-browser not installed (npm ci --prefix vendor)' };
 
   const session = `uigate-${process.pid}`;
   const found = [];
