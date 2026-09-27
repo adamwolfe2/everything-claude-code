@@ -41,6 +41,17 @@ const FINDINGS = {
   required: ['findings'],
 }
 
+// The codex lane must say whether it ran: an empty findings array from a dead lane reads as a clean review.
+const CODEX_FINDINGS = {
+  ...FINDINGS,
+  properties: {
+    ...FINDINGS.properties,
+    status: { type: 'string', enum: ['ok', 'unavailable'] },
+    reason: { type: 'string' },
+  },
+  required: ['status', 'findings'],
+}
+
 const VERDICT = {
   type: 'object',
   properties: {
@@ -67,25 +78,37 @@ const LENSES = [
   {
     key: 'codex',
     agentType: 'general-purpose',
-    prompt: `Run an INDEPENDENT external review of ${scope} using Codex CLI as a second opinion. Execute:
-codex exec --sandbox read-only --skip-git-repo-check --output-last-message /tmp/cx-review.txt "Review this diff. For each issue output SEVERITY: file:line — issue — fix. <200 words. Focus on cross-tenant/IDOR/state bugs other reviewers miss." -C <repo-root>
-Then read /tmp/cx-review.txt and return its findings as structured output. If codex is unavailable, return an empty findings array.`,
+    schema: CODEX_FINDINGS,
+    prompt: `Run an INDEPENDENT external review of ${scope} using Codex CLI as a second opinion.
+Run exactly this one Bash command, with <repo-root> from \`git rev-parse --show-toplevel\`:
+~/codex-bridge/bin/codex-lane "<repo-root>" "Review ${scope}. For each issue output SEVERITY: file:line — issue — fix. <200 words. Focus on cross-tenant/IDOR/state bugs other reviewers miss. If clean, say so."
+codex-lane closes stdin, uses its own temp files and time limits, and pauses itself on quota errors. Do not add \`timeout\`, \`&\`, pipes, or redirects, and do not call codex any other way. Give the Bash call a 660000 ms timeout.
+- Output starts with "UNAVAILABLE:", the script is missing, or the command fails: return status "unavailable", reason = that line (or the error), findings = [].
+- Otherwise: status "ok", findings parsed from the output (findings = [] only when Codex says the code is clean).`,
   },
 ]
+
+const lanes = []
 
 // pipeline: each reviewer's findings get verified the moment that reviewer finishes — no barrier
 const reviewed = await pipeline(
   LENSES,
-  (lens) => agent(lens.prompt, { label: `review:${lens.key}`, phase: 'Review', schema: FINDINGS, agentType: lens.agentType }),
-  (result, lens) =>
-    parallel(
+  (lens) => agent(lens.prompt, { label: `review:${lens.key}`, phase: 'Review', schema: lens.schema || FINDINGS, agentType: lens.agentType }),
+  (result, lens) => {
+    lanes.push({
+      lane: lens.key,
+      status: !result ? 'unavailable' : result.status || 'ok',
+      reason: !result ? 'reviewer agent returned nothing' : result.reason || '',
+    })
+    return parallel(
       (result?.findings || []).map((f) => () =>
         agent(
           `Adversarially verify this ${lens.key} finding is REAL, not a false positive. Default to isReal=false if you cannot confirm from the actual code.\n\nFinding: ${f.severity} ${f.file}:${f.line || '?'} — ${f.issue}\nProposed fix: ${f.fix}`,
           { label: `verify:${f.file}`, phase: 'Verify', schema: VERDICT },
         ).then((v) => ({ ...f, source: lens.key, verdict: v })),
       ),
-    ),
+    )
+  },
 )
 
 const confirmed = reviewed
@@ -94,9 +117,12 @@ const confirmed = reviewed
   .filter((f) => f.verdict?.isReal)
   .sort((a, b) => ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].indexOf(a.severity) - ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].indexOf(b.severity))
 
-log(`Confirmed ${confirmed.length} real findings across ${LENSES.length} reviewers`)
+const down = lanes.filter((l) => l.status !== 'ok')
+log(`Confirmed ${confirmed.length} real findings; ${lanes.length - down.length}/${LENSES.length} reviewers ran`)
+for (const l of down) log(`UNAVAILABLE ${l.lane}: ${l.reason} (its silence is not a clean review)`)
 
 return {
+  lanes,
   confirmed,
   critical: confirmed.filter((f) => f.severity === 'CRITICAL'),
   high: confirmed.filter((f) => f.severity === 'HIGH'),
