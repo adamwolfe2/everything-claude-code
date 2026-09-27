@@ -32,7 +32,7 @@ test('browser skill requires explicit permission before controlling user Chrome'
 });
 
 test('agent rules preserve explicit parallel-work authorization', () => {
-  const rules = read('rules/agents.md');
+  const rules = read('rules/code.md');
 
   assert.match(rules, /explicitly asks?[^\n]*(?:subagents|parallel agents|parallel agent work)/i);
   assert.match(rules, /independent bounded work/i);

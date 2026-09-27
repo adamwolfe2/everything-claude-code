@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: End-of-session handoff that gathers repo status, checks build health, and writes/overwrites HANDOFF.md for next-session continuity. Use when the user asks for a handoff, wrap up, session summary, or what they need for next session.
+description: "End-of-session handoff: gather repo status, check build health, write HANDOFF.md for the next session. Use for handoff, wrap up, session summary, what I need next time."
 ---
 
 # Session Handoff

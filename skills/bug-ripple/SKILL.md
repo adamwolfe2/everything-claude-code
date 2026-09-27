@@ -1,6 +1,6 @@
 ---
 name: bug-ripple
-description: Diagnose one reported bug, define its root cause and blast radius, then run a strict, findings-first, read-only sibling-bug ripple sweep with parallel Codex agents when explicitly authorized and available. Use when the user says bug ripple, sibling bugs, what else could break, fix and sweep, or asks for likely related failures after a bug.
+description: "Diagnose one bug (root cause + blast radius), then a read-only sweep for sibling bugs, with parallel Codex agents when authorized. Use for bug ripple, sibling bugs, what else could break."
 ---
 
 # Bug Ripple

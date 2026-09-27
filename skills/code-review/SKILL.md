@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Harsh unified code review workflow for PRs, current diffs, changed files, focused repo areas, or implementation plans. Use when the user asks for code review, review this branch, audit current changes, find issues, compare reviewers, run a normal or strict review, assess merge safety, decide whether code is ready, or demand thermo-level maintainability scrutiny without invoking a separate thermo skill. For JS/TS reviews, this skill runs the fallow skill for read-only structural analysis before finalizing (mandatory in full and strict modes).
+description: "Harsh code review of a PR, diff, branch, files, or plan: find issues, judge merge safety, strict/thermo mode. Runs fallow first on JS/TS in full and strict modes."
 ---
 
 # Code Review

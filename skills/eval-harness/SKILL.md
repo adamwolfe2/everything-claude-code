@@ -1,6 +1,6 @@
 ---
 name: eval-harness
-description: Build and run eval sets that gate harness or prompt changes. Use when the user wants to measure whether a change actually improved behavior, create a frozen eval set, or score a candidate against a baseline.
+description: "Build and run eval sets that gate harness or prompt changes: measure whether a change improved behavior, freeze an eval set, score a candidate against a baseline."
 ---
 
 # Eval Harness Skill

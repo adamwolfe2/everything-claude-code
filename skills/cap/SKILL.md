@@ -1,6 +1,6 @@
 ---
 name: cap
-description: Check, repair safe verification failures, commit exact intended files, and push safely. Use when the user says cap, asks to commit and push, wants one safe check/commit/push flow, asks for cap fast / fast cap for tiny focused changes, cap dry-run for a no-mutation rehearsal, cap verify for checks only, cap watch for post-push deployment watching, or cap release for the full verify/commit/push/deploy-recovery flow.
+description: "Check, repair safe failures, commit exact files, push. Use for cap / commit and push. Modes: fast, dry-run, verify (checks only), watch (post-push deploy), release (full verify + deploy)."
 ---
 
 # Cap

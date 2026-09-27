@@ -1,6 +1,6 @@
 ---
 name: launch-critical-sweep
-description: Pre-launch catastrophic-risk audit for finding confirmed P0/P1 launch blockers across auth, ownership, payments, destructive actions, deployment/env, migrations, integrations, webhooks, data loss, and trust-breaking client workflows. Use when the user asks for critical issues before launch, go-live blockers, release readiness, catastrophic client/us risk, or a deep sweep of paths that could instantly break trust. Reports only confirmed launch blockers, not a backlog, and hands each fix to safe-feature-slice.
+description: "Pre-launch sweep for confirmed P0/P1 blockers only: auth, ownership, payments, destructive actions, env, migrations, webhooks, data loss. Hands each fix to safe-feature-slice."
 ---
 
 # Launch Critical Sweep

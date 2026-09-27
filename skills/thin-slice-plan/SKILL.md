@@ -1,6 +1,6 @@
 ---
 name: thin-slice-plan
-description: Planning-only workflow for decomposing a broad feature, multi-step fix, safety hardening effort, audit report, or vague implementation request into a detailed dependency-ordered thin-slice plan with explicit progress tracking. Use when the user explicitly asks to plan, slice, sequence, review an existing plan, or stop before implementation. For whole-feature plan-and-execute work with canonical progress, dependency-graph orchestration, and parallel agents, prefer feature-orchestrator.
+description: "Planning only: break a broad feature, fix, hardening effort, or audit into a dependency-ordered thin-slice plan with progress tracking. Use when asked to plan, slice, or stop before code."
 ---
 
 # Thin Slice Plan

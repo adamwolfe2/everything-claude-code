@@ -15,6 +15,7 @@ const testFiles = [
   'lib/package-manager.test.js',
   'hooks/hooks.test.js',
   'lib/packs.test.mjs',
+  'lib/apply-context.test.mjs',
   'hooks/hook-layer.test.js',
   'hooks/verify-gate.test.js',
   'hooks/ui-gate.test.js',

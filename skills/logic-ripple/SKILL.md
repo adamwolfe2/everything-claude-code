@@ -1,6 +1,6 @@
 ---
 name: logic-ripple
-description: Map the blast radius of a business/domain logic change before implementation. Use when the user says logic ripple, business-rule ripple, pricing/tax/GST ripple, entitlement ripple, apply this rule everywhere, find duplicate rule logic, canonicalize similar logic, or asks where else a rule/invariant should change across the codebase.
+description: "Map the blast radius of a business-rule change (pricing, tax, entitlements) before coding: every place the rule lives, duplicates to canonicalize. Use for logic ripple, apply everywhere."
 ---
 
 # Logic Ripple

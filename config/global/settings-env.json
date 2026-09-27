@@ -1,0 +1,3 @@
+{
+  "PONYTAIL_SUBAGENT_MATCHER": "general|tdd|build-error|refactor|e2e|^claude$"
+}

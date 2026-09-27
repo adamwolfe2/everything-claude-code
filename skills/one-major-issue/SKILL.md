@@ -1,6 +1,6 @@
 ---
 name: one-major-issue
-description: Find at most one major confirmed flaw, gap, bug, or issue in a codebase, then suggest a narrow fix handoff using the safe-feature-slice skill. Use when the user asks for the single biggest problem, one high-impact code review finding, a focused bug hunt, or a repo audit that should return one actionable issue instead of a backlog. If no major issue can be responsibly confirmed, report that plainly instead of inventing one. Supports extra instructions after the skill call, such as focus area, files, risk category, or constraints.
+description: "Find at most one major confirmed flaw in a codebase (optional focus area) and hand the fix to safe-feature-slice. Says so plainly if none can be confirmed."
 ---
 
 # One Major Issue

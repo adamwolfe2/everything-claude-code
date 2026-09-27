@@ -91,8 +91,10 @@ function loadTaskCases() {
 // (which tools ran, what they touched) alongside the final text response —
 // the judge needs that evidence for tasks that hinge on verification/scope,
 // not just on the prose the model wrote afterward.
-function claude(prompt, { model, timeout = CASE_TIMEOUT_MS, cwd, maxTurns }) {
+function claude(prompt, { model, timeout = CASE_TIMEOUT_MS, cwd, maxTurns, candidate = false }) {
   const turnArgs = maxTurns ? ['--max-turns', String(maxTurns)] : []
+  // EVAL_CLAUDE_ARGS='["--setting-sources","project,local",...]': extra args for the candidate only (never the judge)
+  if (candidate && process.env.EVAL_CLAUDE_ARGS) turnArgs.push(...JSON.parse(process.env.EVAL_CLAUDE_ARGS))
   // EVAL_SETTINGS=<file>: extra settings (e.g. a candidate hook) layered on the user's settings
   if (process.env.EVAL_SETTINGS) turnArgs.push('--settings', process.env.EVAL_SETTINGS)
   return new Promise((resolve, reject) => {
@@ -148,6 +150,8 @@ function prepareFixture(kase) {
     if (!fs.existsSync(src)) throw new Error(`fixture dir missing: ${kase.fixtures}`)
     fs.cpSync(src, dst, { recursive: true })
   }
+  // EVAL_CONTEXT_FILE: candidate context installed as the case's CLAUDE.md, committed so it never shows in the diff
+  if (process.env.EVAL_CONTEXT_FILE) fs.copyFileSync(process.env.EVAL_CONTEXT_FILE, path.join(dst, 'CLAUDE.md'))
   execSync('git init -q && git add -A && git -c user.email=eval@local -c user.name=eval commit -q --allow-empty -m base', { cwd: dst })
   return dst
 }
@@ -216,7 +220,7 @@ async function runCase(kase, opts) {
   let fixtureDir = null
   try {
     fixtureDir = prepareFixture(kase)
-    const { text, toolCalls } = await claude(kase.prompt, { model: opts.model, timeout, cwd: fixtureDir, maxTurns: kase.max_turns })
+    const { text, toolCalls } = await claude(kase.prompt, { model: opts.model, timeout, cwd: fixtureDir, maxTurns: kase.max_turns, candidate: true })
     const evidence = buildEvidence(toolCalls, fixtureDir)
     const graded = evidence ? `${text}\n\n---TOOL CALL LOG (for grading, not written by the candidate)---\n${evidence}` : text
     const judged =

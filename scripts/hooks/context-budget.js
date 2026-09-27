@@ -8,7 +8,7 @@ const fs = require('fs');
 
 // Calibrated to the 1M-context model + audit 2026-06-11 (median peak 570K, 43% of
 // turns ran >500K context, each re-billing the whole window as cache_read).
-const SOFT = 300000; // nudge: compact / wrap up at clean boundary
+const SOFT = 400000; // nudge: compact / wrap up at clean boundary
 const HARD = 600000; // stop: start a fresh session now
 // Cumulative gates (evolve 2026-06-18): marathon LENGTH, not window size, is the burn
 // driver. Worst sessions (863t/188M, 594t/113M cache_read) never trip the size gate.

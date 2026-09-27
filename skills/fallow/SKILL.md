@@ -1,6 +1,6 @@
 ---
 name: fallow
-description: Run Fallow read-only structural analysis for TypeScript and JavaScript repos. Use when the user asks to run Fallow, audit JS/TS dead code, dependency drift, duplication, complexity, circular imports, architecture boundaries, or when code-review/cap/deep-review needs Fallow evidence. This skill is mandatory inside the code-review skill's full and strict modes whenever JS/TS is in scope.
+description: "Read-only Fallow structural analysis for JS/TS: dead code, dependency drift, duplication, complexity, circular imports, boundaries. Required in code-review full/strict on JS/TS."
 ---
 
 # Fallow

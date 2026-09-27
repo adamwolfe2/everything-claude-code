@@ -1,6 +1,6 @@
 ---
 name: safe-feature-slice
-description: Safety-first workflow for planning, building, continuing, or reviewing one or more feature slices while preserving invariants. Use for single safe slices, existing slice-plan continuation, audits, reviews, or feature work touching money, permissions, data ownership, destructive actions, webhooks, state transitions, migrations, integrations, or customer-visible records. For whole-feature delivery through a canonical dependency graph, progress.md, and maximum safe parallel agents, prefer feature-orchestrator.
+description: "Safety-first plan/build/review of slices touching money, permissions, data ownership, destructive actions, webhooks, state transitions, migrations, integrations. Mandatory for Tier-1."
 ---
 
 # Safe Feature Slice

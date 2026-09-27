@@ -1,6 +1,6 @@
 ---
 name: browser-harness
-description: "Control a browser only when the user explicitly requests browser interaction or a task cannot be verified without rendered-page behavior. Prefer isolated headless sessions; never attach to the user's Chrome unless they explicitly request control of their browser."
+description: "Raw-CDP browser control, only when the user asks for browser interaction or a check needs a rendered page. Prefer isolated headless sessions; never attach to the user's Chrome unless asked."
 ---
 
 # browser-harness

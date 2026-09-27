@@ -1,6 +1,6 @@
 ---
 name: issue-fix-strategy
-description: Chat-only executive triage for any set of issues, review findings, UX complaints, screenshots, logs, failing tests, tool diagnostics, or messy context. Use when the user wants plain-English judgement on what each issue is, why it matters, how to fix it, priority, proof needed, and the next suggested workflow step before implementation. Routes broad work to feature-graph-plan/feature-orchestrator, narrow risky fixes to safe-feature-slice, and decision-blocked work to feature-intake-grill without creating plan artifacts.
+description: "Chat-only triage of issues, review findings, logs, screenshots, or failing tests: what each is, why it matters, fix, priority, proof needed, next step. No plan files."
 ---
 
 # Issue Fix Strategy

@@ -63,9 +63,9 @@ Archived skills sit in `archive/` and stop polluting the selector. Add back per-
 
 ## Rules
 
-`security.md` · `coding-style.md` · `testing.md` · `git-workflow.md` · `agents.md` · `patterns.md` · `performance.md` · `performance-audit.md` · `hooks.md`
+`rules/code.md`: one ~1 KB file (immutability, errors, validation, secrets, size limits, commits/PRs, delegation). `~/.claude/rules` symlinks here, so every session loads it.
 
-These are referenced from `~/.claude/CLAUDE.md` (the global instructions file). All projects inherit them.
+Global instructions live in `config/global/CLAUDE.md` and `RTK.md`; install with `node scripts/apply-context.mjs` (backs up first).
 
 ## Hooks
 
