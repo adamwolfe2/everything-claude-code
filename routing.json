@@ -320,6 +320,19 @@
       "tier": "red"
     },
     {
+      "id": "fleet",
+      "patterns": [
+        "fleet",
+        "use my usage",
+        "extra usage",
+        "spin up agents",
+        "work on my projects"
+      ],
+      "tool": "/fleet",
+      "why": "triage top items per product repo, one worktree agent each, draft PRs only",
+      "tier": "red"
+    },
+    {
       "id": "watch",
       "patterns": [
         "watch the",
