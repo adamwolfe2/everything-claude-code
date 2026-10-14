@@ -228,6 +228,7 @@ test('/audit submits the audit flow for the named client, CRM write left to Adam
   const prompt = await got
   expect(prompt).toContain('Acme Dental')
   expect(prompt).toContain('npm run client:upsert')
+  expect(prompt).toContain('git pull --ff-only')
   expect(prompt).toContain('Only after Adam says confirm')
 })
 
@@ -250,5 +251,6 @@ test('/site builds from clean template main and holds the repo and deploy for Ad
   const prompt = await got
   expect(prompt).toContain('Acme Dental')
   expect(prompt).toContain('archive origin/main')
+  expect(prompt).toContain('--viewport-size=<w>,900')
   expect(prompt).toContain('Only after Adam says ship')
 })
