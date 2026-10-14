@@ -231,6 +231,18 @@ async function formatFile($: EngineInterface, file: string) {
   }
 }
 
+// One line per typed prompt in the harness telemetry, so /digest can report how often Adam corrects Claude.
+async function logPrompt($: EngineInterface, isCorrection: boolean) {
+  const line = JSON.stringify({
+    ts: new Date(await $.clock.now()).toISOString(),
+    type: 'autopilot.prompt',
+    project: s.project || undefined,
+    isCorrection,
+  })
+  const run = await $.process.run(['sh', '-c', 'printf "%s\\n" "$1" >> "$2"', 'sh', line, `${s.home}/.claude/telemetry.jsonl`])
+  if (run.exitCode !== 0) $.ui.log(`autopilot telemetry: append exited ${run.exitCode}`, { to: 'debug' })
+}
+
 function readLock($: EngineInterface, text: string): { session: string; at: number } | undefined {
   try {
     return JSON.parse(text) as { session: string; at: number }
@@ -415,6 +427,7 @@ export const register: Register = on => {
     s.awayLeft = 0
     const text = ` ${e.text.toLowerCase()} `
     const isCorrection = CORRECTION.test(e.text)
+    await logPrompt($, isCorrection).catch((err: unknown) => $.ui.log(`autopilot telemetry: ${String(err)}`, { to: 'debug' }))
     const notes: string[] = isCorrection ? [CORRECTION_NOTE] : []
     const project = s.projects.length > 0 ? detectProject(e.text) : undefined
     if (project && !s.loadedProjects.has(project)) {

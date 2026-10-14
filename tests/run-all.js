@@ -13,6 +13,7 @@ const testsDir = __dirname;
 const testFiles = [
   'workflows/parallel-review.test.js',
   'lib/utils.test.js',
+  'lib/correction-rate.test.js',
   'lib/package-manager.test.js',
   'hooks/hooks.test.js',
   'lib/packs.test.mjs',

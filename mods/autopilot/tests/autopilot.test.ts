@@ -303,3 +303,13 @@ test("an edited file is formatted with the repo's own prettier, and only where t
   await $.tool.call({ tool: 'Edit', file_path: '/home/adam/repo/b.ts', old_string: 'a', new_string: 'b' } as never)
   expect(runs.some(a => a[0]?.endsWith('prettier'))).toBe(false)
 })
+
+test('each typed prompt is logged to telemetry, marked when it corrects Claude', async ($, on) => {
+  const runs: string[][] = []
+  bottom(on, { registered: [], tools: [], writes: [], contexts: [], runs })
+  await $.session.start({ cwd: '/home/adam/repo', source: 'startup' } as never)
+  await $.prompt.submit({ text: 'add a footer', wait: false, origin: { kind: 'composer' } } as never)
+  await $.prompt.submit({ text: "that's not what I asked for", wait: false, origin: { kind: 'composer' } } as never)
+  const logged = runs.filter(a => a.includes('/home/adam/.claude/telemetry.jsonl')).map(a => JSON.parse(a[4] ?? '{}'))
+  expect(logged.map(l => [l.type, l.isCorrection])).toEqual([['autopilot.prompt', false], ['autopilot.prompt', true]])
+})

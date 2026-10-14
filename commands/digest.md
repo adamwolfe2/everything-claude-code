@@ -31,6 +31,7 @@ In parallel:
 4. Modified-this-week skills and commands (`git log --since=...`)
 5. Continuous-learning extracted patterns from `~/.claude/projects/*/memory/`
 6. Mistake log — last 7 days of `~/.claude/mistakes.jsonl` (analyzed in Step 2.5)
+7. Correction rate — `node ~/everything-claude-code/scripts/correction-rate.js 4`: the share of Adam's prompts that corrected Claude, per week. Report this week's rate and the 4-week trend at the top of the digest; a rising rate outranks every other finding.
 
 ### Step 2: Classify
 
