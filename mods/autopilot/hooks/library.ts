@@ -20,7 +20,8 @@ export function words(text: string): string[] {
 }
 
 function description(text: string): string {
-  return /^description:\s*(.*)$/m.exec(text)?.[1]?.trim() ?? ''
+  // No frontmatter (the contexts/ files): the first heading describes it.
+  return (/^description:\s*(.*)$/m.exec(text) ?? /^#\s+(.*)$/m.exec(text))?.[1]?.trim() ?? ''
 }
 
 export async function loadLibrary($: EngineInterface, home: string): Promise<LibraryEntry[]> {
@@ -29,12 +30,13 @@ export async function loadLibrary($: EngineInterface, home: string): Promise<Lib
   if (await $.fs.exists(`${root}/skills`)) {
     for (const d of await $.fs.list(`${root}/skills`)) {
       const path = `${root}/skills/${d.name}/SKILL.md`
-      if (d.kind === 'dir' && (await $.fs.exists(path))) found.push({ name: d.name, path })
+      if ((d.kind === 'dir' || d.isLink) && (await $.fs.exists(path))) found.push({ name: d.name, path })
     }
   }
   if (await $.fs.exists(`${root}/commands`)) {
     for (const f of await $.fs.list(`${root}/commands`)) {
-      if (f.kind === 'file' && f.name.endsWith('.md')) found.push({ name: f.name.slice(0, -3), path: `${root}/commands/${f.name}` })
+      // Some archived commands are symlinks into contexts/.
+      if (f.kind !== 'dir' && f.name.endsWith('.md')) found.push({ name: f.name.slice(0, -3), path: `${root}/commands/${f.name}` })
     }
   }
   return Promise.all(

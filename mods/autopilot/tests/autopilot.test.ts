@@ -3,7 +3,7 @@ import type { On } from 'claude-code'
 
 const ROUTES = JSON.stringify({ routes: [{ id: 'ship', patterns: ['ship it'], tool: '/cap' }] })
 
-function bottom(on: On, log: { registered: string[]; tools: string[]; writes: string[]; contexts: string[][]; root?: string; onText?: (text: string) => void; runs?: string[][]; files?: Map<string, string>; session?: string; dirs?: Record<string, { name: string; kind: string }[]> }) {
+function bottom(on: On, log: { registered: string[]; tools: string[]; writes: string[]; contexts: string[][]; root?: string; onText?: (text: string) => void; runs?: string[][]; files?: Map<string, string>; session?: string; dirs?: Record<string, { name: string; kind: string; isLink?: boolean }[]> }) {
   on('env.get', () => ({ value: '/home/adam' }))
   on('fs.read', (_$, e) => ({ value: log.files?.get(e.path) ?? (e.path.endsWith('AGENTS.md') ? 'Rule: VP leads go to Close.' : ROUTES) }))
   on('fs.write', (_$, e) => {
@@ -325,7 +325,7 @@ function library() {
   ])
   const dirs = {
     [`${LIB}/skills`]: [{ name: 'pricing', kind: 'dir' }, { name: 'clerk', kind: 'dir' }],
-    [`${LIB}/commands`]: [{ name: 'mode-review.md', kind: 'file' }],
+    [`${LIB}/commands`]: [{ name: 'mode-review.md', kind: 'other', isLink: true }],
   }
   return { files, dirs }
 }
