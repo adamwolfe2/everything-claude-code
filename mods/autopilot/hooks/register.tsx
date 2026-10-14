@@ -185,13 +185,14 @@ async function devServer($: EngineInterface): Promise<string | undefined> {
 }
 
 // ponytail: needs the project's own playwright + browsers; no install fallback.
+// The first viewport only: a full-page shot of a long page reads back too small to see.
 async function autoScreenshot($: EngineInterface): Promise<string | undefined> {
   const url = await devServer($)
   if (url === undefined) return undefined
   const dir = `${s.home}/.claude/screenshots`
   const path = `${dir}/${new Date(await $.clock.now()).toISOString().replace(/[:.]/g, '-')}.png`
   await $.process.run(['mkdir', '-p', dir])
-  const run = await $.process.run(['npx', '--no-install', 'playwright', 'screenshot', '--full-page', url, path], {
+  const run = await $.process.run(['npx', '--no-install', 'playwright', 'screenshot', '--viewport-size=1440,900', url, path], {
     cwd: await $.session.root(),
     timeoutMs: 60_000,
   })
@@ -199,7 +200,7 @@ async function autoScreenshot($: EngineInterface): Promise<string | undefined> {
     $.ui.log(`autopilot screenshot: playwright exited ${run.exitCode}: ${run.stderr.slice(0, 160)}`)
     return undefined
   }
-  return `[screenshot] UI changed and checks pass. ${url} captured at ${path}. Read that image and confirm the change looks right before saying done.`
+  return `[screenshot] UI changed and checks pass. ${url} captured at ${path} (first 1440x900 viewport). Read that image and confirm the change looks right before saying done; if the change sits below the fold, take your own shot of it.`
 }
 
 // Runs from a timer, outside any hook, so the queued /clear is not refused.

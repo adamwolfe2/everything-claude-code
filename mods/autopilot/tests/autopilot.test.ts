@@ -3,7 +3,7 @@ import type { On } from 'claude-code'
 
 const ROUTES = JSON.stringify({ routes: [{ id: 'ship', patterns: ['ship it'], tool: '/cap' }] })
 
-function bottom(on: On, log: { registered: string[]; tools: string[]; writes: string[]; contexts: string[][]; root?: string; onText?: (text: string) => void }) {
+function bottom(on: On, log: { registered: string[]; tools: string[]; writes: string[]; contexts: string[][]; root?: string; onText?: (text: string) => void; runs?: string[][] }) {
   on('env.get', () => ({ value: '/home/adam' }))
   on('fs.read', (_$, e) => ({ value: e.path.endsWith('AGENTS.md') ? 'Rule: VP leads go to Close.' : ROUTES }))
   on('fs.write', (_$, e) => {
@@ -11,6 +11,7 @@ function bottom(on: On, log: { registered: string[]; tools: string[]; writes: st
     return { value: undefined }
   })
   on('process.run', (_$, e) => {
+    log.runs?.push([...e.argv])
     const [cmd, sub] = e.argv
     const stdout =
       cmd === 'vercel'
@@ -181,11 +182,16 @@ test('a passing check after a UI edit screenshots the running dev server once', 
     if (e.url.endsWith(':3000')) throw new Error('ECONNREFUSED')
     return { value: { status: 200, ok: true, headers: {}, text: '' } as never }
   })
-  bottom(on, { registered: [], tools: [], writes: [], contexts: [] })
+  const argvs: string[][] = []
+  bottom(on, { registered: [], tools: [], writes: [], contexts: [], runs: argvs })
   await $.session.start({ cwd: '/home/adam/repo', source: 'startup' } as never)
   await $.tool.call({ tool: 'Edit', file_path: '/home/adam/repo/page.tsx', old_string: 'a', new_string: 'b' } as never)
   const first = await $.tool.call({ tool: 'Bash', command: 'pnpm test' } as never)
   expect(first.context?.join(' ')).toContain('http://localhost:5173 captured at')
+  // A full-page shot of a long page reads back too small to see.
+  const shot = argvs.find(a => a.includes('playwright')) ?? []
+  expect(shot).toContain('--viewport-size=1440,900')
+  expect(shot).not.toContain('--full-page')
   const second = await $.tool.call({ tool: 'Bash', command: 'pnpm test' } as never)
   expect(second.context?.join(' ') ?? '').not.toContain('[screenshot]')
 })
