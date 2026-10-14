@@ -119,7 +119,7 @@ const out = [];
 
 // pinned project header — conventions ALWAYS show when inside a known repo (rule guard)
 if (project) {
-  out.push(`[project: ${project.id}] ${project.repo} · ${project.stack || ''}`);
+  out.push(`[project: ${project.id}] ${[project.repo, project.stack].filter(Boolean).join(' · ')}`);
   const conv = (project.conventions || []).slice(0, 4);
   if (conv.length) out.push(`  RULES: ${conv.join(' · ')}`);
   out.push('');

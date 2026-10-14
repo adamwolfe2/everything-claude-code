@@ -1,0 +1,6 @@
+{
+  "name": "autopilot",
+  "version": "0.1.0",
+  "description": "Adam's workflow mod: cost status line, one-key handoff + fresh chat, live verify tracking, away mode, Codex second opinion, suggestion row.",
+  "types": "./types/index.d.ts"
+}
