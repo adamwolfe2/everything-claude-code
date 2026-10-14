@@ -28,6 +28,7 @@ const SOFT_READS = 300_000_000
 const HARD_READS = 600_000_000
 const RULES_MAX = 8_000
 const DEV_PORTS = [3000, 5173]
+const LOCK_LIVE_MS = 20 * 60_000
 const CORRECTION =
   /\b(that'?s not what i|not what i (asked|wanted|meant)|still (broken|not working|wrong)|(didn'?t|doesn'?t) work|you (missed|forgot|ignored|didn'?t))\b/i
 const CORRECTION_NOTE =
@@ -127,6 +128,7 @@ const s = {
   hasFailedCheck: false,
   isMistakeNudged: false,
   waiting: '',
+  warnedCheckouts: new Set<string>(),
 }
 
 async function refresh($: EngineInterface) {
@@ -181,6 +183,35 @@ async function devServer($: EngineInterface): Promise<string | undefined> {
     if (isUp) return url
   }
   return undefined
+}
+
+// Sessions all start in ~ and cd later, so the process list cannot tell who works where;
+// each edit stamps its checkout with this session's id instead.
+// ponytail: a session that ended under 20 min ago still counts as live; it costs one held edit.
+async function checkoutClash($: EngineInterface, file: string): Promise<string | undefined> {
+  const run = await $.process.run(['git', '-C', file.slice(0, file.lastIndexOf('/')) || '/', 'rev-parse', '--show-toplevel'], {
+    timeoutMs: 5_000,
+  })
+  if (run.exitCode !== 0) return undefined
+  const top = run.stdout.trim()
+  const dir = `${s.home}/.claude/state/autopilot-locks`
+  const path = `${dir}/${top.replace(/[^A-Za-z0-9]/g, '_')}.json`
+  const [me, now] = [await $.session.id(), await $.clock.now()]
+  const other = (await $.fs.exists(path)) ? readLock($, await $.fs.read(path)) : undefined
+  await $.process.run(['mkdir', '-p', dir])
+  await $.fs.write(path, JSON.stringify({ session: me, at: now }))
+  if (!other || other.session === me || now - other.at > LOCK_LIVE_MS || s.warnedCheckouts.has(top)) return undefined
+  s.warnedCheckouts.add(top)
+  return `[checkout] Another Claude session (${other.session.slice(0, 8)}) edited ${top} ${Math.round((now - other.at) / 60_000)} min ago; two sessions in one checkout overwrite each other. Call EnterWorktree and make this edit there. If that session is finished, retry the edit and it goes through.`
+}
+
+function readLock($: EngineInterface, text: string): { session: string; at: number } | undefined {
+  try {
+    return JSON.parse(text) as { session: string; at: number }
+  } catch (err) {
+    $.ui.log(`autopilot checkout lock unreadable, replacing it: ${String(err)}`, { to: 'debug' })
+    return undefined
+  }
 }
 
 // ponytail: needs the project's own playwright + browsers; no install fallback.
@@ -424,6 +455,15 @@ export const register: Register = on => {
       await refresh($)
     }
   }).catch(($, e, next) => ({ result: `autopilot wait failed: ${String(next.error)}` }))
+
+  on('tool.call', { tool: 'Edit' }, async ($, e, next) => {
+    const clash = e.agentId === undefined ? await checkoutClash($, e.file_path) : undefined
+    return clash ? { deny: clash } : next(e)
+  }).catch(($, e, next) => next(e))
+  on('tool.call', { tool: 'Write' }, async ($, e, next) => {
+    const clash = e.agentId === undefined ? await checkoutClash($, e.file_path) : undefined
+    return clash ? { deny: clash } : next(e)
+  }).catch(($, e, next) => next(e))
 
   on('tool.call', { tool: 'Read' }, async ($, e, next) => {
     const input = e as unknown as { file_path: string; offset?: number; limit?: number }

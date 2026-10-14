@@ -3,18 +3,21 @@ import type { On } from 'claude-code'
 
 const ROUTES = JSON.stringify({ routes: [{ id: 'ship', patterns: ['ship it'], tool: '/cap' }] })
 
-function bottom(on: On, log: { registered: string[]; tools: string[]; writes: string[]; contexts: string[][]; root?: string; onText?: (text: string) => void; runs?: string[][] }) {
+function bottom(on: On, log: { registered: string[]; tools: string[]; writes: string[]; contexts: string[][]; root?: string; onText?: (text: string) => void; runs?: string[][]; files?: Map<string, string>; session?: string }) {
   on('env.get', () => ({ value: '/home/adam' }))
-  on('fs.read', (_$, e) => ({ value: e.path.endsWith('AGENTS.md') ? 'Rule: VP leads go to Close.' : ROUTES }))
+  on('fs.read', (_$, e) => ({ value: log.files?.get(e.path) ?? (e.path.endsWith('AGENTS.md') ? 'Rule: VP leads go to Close.' : ROUTES) }))
   on('fs.write', (_$, e) => {
     log.writes.push(e.path)
+    log.files?.set(e.path, e.text)
     return { value: undefined }
   })
   on('process.run', (_$, e) => {
     log.runs?.push([...e.argv])
     const [cmd, sub] = e.argv
     const stdout =
-      cmd === 'vercel'
+      cmd === 'git' && e.argv.includes('--show-toplevel')
+        ? '/home/adam/repo\n'
+        : cmd === 'vercel'
         ? JSON.stringify({ deployments: [
             { name: 'vending-website', readyState: 'ERROR', target: 'production', created: 1_000, url: 'vw.vercel.app' },
             { name: 'vending-website', readyState: 'READY', target: 'production', created: 500, url: 'old.vercel.app' },
@@ -41,13 +44,14 @@ function bottom(on: On, log: { registered: string[]; tools: string[]; writes: st
     return { value: { tool: `mcp__autopilot__${e.name}` } }
   })
   on('session.usage', () => ({ value: { startedAt: 0, context: { window: 200000, percent: 20 }, rateLimits: [] } }))
+  on('session.id', () => ({ value: log.session ?? 'me-session' }))
   on('session.root', () => ({ value: log.root ?? '/home/adam/repo' }))
   on('fs.list', () => ({ value: [
     { name: 'vending-website', kind: 'dir', size: 0, mtimeMs: 0, isLink: false },
     { name: 'sendmore', kind: 'dir', size: 0, mtimeMs: 0, isLink: false },
     { name: 'Downloads', kind: 'dir', size: 0, mtimeMs: 0, isLink: false },
   ] }))
-  on('fs.exists', (_$, e) => ({ value: /vending-website\/(\.git|AGENTS\.md)$|sendmore\/\.git$/.test(e.path) }))
+  on('fs.exists', (_$, e) => ({ value: log.files?.has(e.path) || /vending-website\/(\.git|AGENTS\.md)$|sendmore\/\.git$/.test(e.path) }))
   on('fs.stat', (_$, e) => ({ value: { kind: 'file', size: e.path.endsWith('big.ts') ? 90_000 : e.path.endsWith('mid.ts') ? 30_000 : 500, mtimeMs: 0, isLink: false } }))
   on('ui.notify', () => ({ value: { isSent: true, channel: 'terminal_bell' } }))
   on('ui.open', () => ({ value: { isPlaced: true } as never }))
@@ -263,4 +267,26 @@ test('/site builds from clean template main and holds the repo and deploy for Ad
   expect(prompt).toContain('archive origin/main')
   expect(prompt).toContain('--viewport-size=<w>,900')
   expect(prompt).toContain('Only after Adam says ship')
+})
+
+test('an edit in a checkout another live session is editing is held once with a worktree hint', async ($, on) => {
+  const lock = '/home/adam/.claude/state/autopilot-locks/_home_adam_repo.json'
+  const files = new Map([[lock, JSON.stringify({ session: 'other-session', at: 0 })]])
+  bottom(on, { registered: [], tools: [], writes: [], contexts: [], files })
+  await $.session.start({ cwd: '/home/adam/repo', source: 'startup' } as never)
+  const edit = { tool: 'Edit', file_path: '/home/adam/repo/a.ts', old_string: 'a', new_string: 'b' } as never
+  const first = await $.tool.call(edit)
+  expect(first.deny ?? '').toContain('EnterWorktree')
+  expect(JSON.parse(files.get(lock) ?? '{}').session).toBe('me-session')
+  const second = await $.tool.call(edit)
+  expect(second.deny).toBeUndefined()
+})
+
+test('an edit with no other live session on the checkout goes straight through', async ($, on) => {
+  const files = new Map<string, string>()
+  bottom(on, { registered: [], tools: [], writes: [], contexts: [], files })
+  await $.session.start({ cwd: '/home/adam/repo', source: 'startup' } as never)
+  const ran = await $.tool.call({ tool: 'Edit', file_path: '/home/adam/repo/a.ts', old_string: 'a', new_string: 'b' } as never)
+  expect(ran.deny).toBeUndefined()
+  expect([...files.keys()].some(k => k.endsWith('_home_adam_repo.json'))).toBe(true)
 })
