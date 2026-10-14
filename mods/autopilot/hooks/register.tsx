@@ -427,7 +427,9 @@ export const register: Register = on => {
     s.awayLeft = 0
     const text = ` ${e.text.toLowerCase()} `
     const isCorrection = CORRECTION.test(e.text)
-    await logPrompt($, isCorrection).catch((err: unknown) => $.ui.log(`autopilot telemetry: ${String(err)}`, { to: 'debug' }))
+    // Only Adam typing (terminal or remote control) counts; headless runs would dilute the rate.
+    if (e.origin.kind === 'composer' || e.origin.kind === 'bridge')
+      await logPrompt($, isCorrection).catch((err: unknown) => $.ui.log(`autopilot telemetry: ${String(err)}`, { to: 'debug' }))
     const notes: string[] = isCorrection ? [CORRECTION_NOTE] : []
     const project = s.projects.length > 0 ? detectProject(e.text) : undefined
     if (project && !s.loadedProjects.has(project)) {

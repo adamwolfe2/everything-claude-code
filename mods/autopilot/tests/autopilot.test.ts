@@ -310,6 +310,8 @@ test('each typed prompt is logged to telemetry, marked when it corrects Claude',
   await $.session.start({ cwd: '/home/adam/repo', source: 'startup' } as never)
   await $.prompt.submit({ text: 'add a footer', wait: false, origin: { kind: 'composer' } } as never)
   await $.prompt.submit({ text: "that's not what I asked for", wait: false, origin: { kind: 'composer' } } as never)
+  // A headless run (smoke test, cron) is not Adam typing.
+  await $.prompt.submit({ text: 'run the check', wait: false, origin: { kind: 'sdk' } } as never)
   const logged = runs.filter(a => a.includes('/home/adam/.claude/telemetry.jsonl')).map(a => JSON.parse(a[4] ?? '{}'))
   expect(logged.map(l => [l.type, l.isCorrection])).toEqual([['autopilot.prompt', false], ['autopilot.prompt', true]])
 })
