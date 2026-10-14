@@ -190,6 +190,18 @@ test('a passing check after a UI edit screenshots the running dev server once', 
   expect(second.context?.join(' ') ?? '').not.toContain('[screenshot]')
 })
 
+test('in a bug session the mistake nudge does not swallow the screenshot', async ($, on) => {
+  on('http.fetch', () => ({ value: { status: 200, ok: true, headers: {}, text: '' } as never }))
+  bottom(on, { registered: [], tools: [], writes: [], contexts: [] })
+  await $.session.start({ cwd: '/home/adam/repo', source: 'startup' } as never)
+  await $.prompt.submit({ text: 'the hero is broken on mobile', wait: false, origin: { kind: 'composer' } } as never)
+  await $.tool.call({ tool: 'Edit', file_path: '/home/adam/repo/page.tsx', old_string: 'a', new_string: 'b' } as never)
+  const ran = await $.tool.call({ tool: 'Bash', command: 'pnpm test' } as never)
+  const context = ran.context?.join(' ') ?? ''
+  expect(context).toContain('[mistake-log]')
+  expect(context).toContain('[screenshot]')
+})
+
 test('/audit submits the audit flow for the named client, CRM write left to Adam', async ($, on) => {
   const log: Parameters<typeof bottom>[1] = { registered: [], tools: [], writes: [], contexts: [] }
   // The timer fires only once the command hook has returned, as it does live.

@@ -455,12 +455,12 @@ export const register: Register = on => {
     } else if (e.tool === 'Bash' && 'command' in e) {
       const command = String(e.command)
       if (CHECK.test(command) && ran.isError !== true) {
-        const hadEdits = s.edits > 0
-        s.edits = 0
-        if (hadEdits && s.isBugSession && !s.isMistakeNudged) {
+        const notes: string[] = []
+        if (s.edits > 0 && s.isBugSession && !s.isMistakeNudged) {
           s.isMistakeNudged = true
-          return { ...ran, context: [...(ran.context ?? []), MISTAKE_NOTE] }
+          notes.push(MISTAKE_NOTE)
         }
+        s.edits = 0
         if (s.isUiTouched && !s.hasLooked) {
           // Logged, not thrown: the outer catch would re-run the Bash call.
           const note = await autoScreenshot($).catch((err: unknown) => {
@@ -469,9 +469,10 @@ export const register: Register = on => {
           })
           if (note !== undefined) {
             s.hasLooked = true
-            return { ...ran, context: [...(ran.context ?? []), note] }
+            notes.push(note)
           }
         }
+        if (notes.length > 0) return { ...ran, context: [...(ran.context ?? []), ...notes] }
       }
       if (LOOK.test(command)) s.hasLooked = true
     } else if (LOOK_TOOL.test(e.tool)) {
