@@ -80,6 +80,18 @@ console.log('\ntaste-lint.js:');
   t('silent when stop_hook_active', () => assert.equal(run('taste-lint.js', { ...input, session_id: 's2', stop_hook_active: true }).out, ''));
   const clean = repo({ 'src/b.ts': 'try { run() } catch (e) {}\n' });
   t('pre-existing lines are not reported', () => assert.equal(run('taste-lint.js', { session_id: 's3', cwd: clean }).out, ''));
+  // Another session's untracked files predate this transcript: not this session's work.
+  const shared = repo({ 'src/c.ts': 'export const c = 1\n' });
+  const old = new Date(Date.now() - 3 * 86400 * 1000);
+  fs.writeFileSync(path.join(shared, 'src/stale.ts'), 'try { run() } catch (e) {}\n');
+  fs.utimesSync(path.join(shared, 'src/stale.ts'), old, old);
+  const transcript = path.join(home, 's4.jsonl');
+  fs.writeFileSync(transcript, '');
+  t('files untouched since the session started are not reported', () =>
+    assert.equal(run('taste-lint.js', { session_id: 's4', cwd: shared, transcript_path: transcript }).out, ''));
+  fs.writeFileSync(path.join(shared, 'src/fresh.ts'), 'try { run() } catch (e) {}\n');
+  t('files written during the session are still reported', () =>
+    assert.match(ctx(run('taste-lint.js', { session_id: 's4', cwd: shared, transcript_path: transcript }).out), /src\/fresh\.ts:1/));
 }
 
 console.log('\nmistake-log-nudge.js:');

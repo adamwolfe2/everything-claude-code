@@ -24,9 +24,21 @@ function git(cwd, args) {
   }
 }
 
-/** Map of file -> [{line, text}] for lines added relative to HEAD, plus all lines of new files. */
-function addedLines(cwd) {
+/** When this session began: its transcript's birth. 0 (scan everything) when unknown. */
+function sessionStart(input) {
+  try {
+    return input.transcript_path ? fs.statSync(input.transcript_path).birthtimeMs || 0 : 0
+  } catch (error) {
+    return 0 // no transcript yet: fall back to scanning every changed file
+  }
+}
+
+/** Map of file -> [{line, text}] for lines added relative to HEAD, plus all lines of new files.
+ * Files not modified since `since` are another session's leftovers and are skipped. */
+function addedLines(cwd, since) {
   const out = new Map()
+  const top = (git(cwd, ['rev-parse', '--show-toplevel']) || cwd).trim()
+  const isFresh = abs => fs.existsSync(abs) && fs.statSync(abs).mtimeMs >= since
   const diff = git(cwd, ['diff', '-U0', '--no-color', 'HEAD', '--', '*.ts', '*.tsx', '*.js', '*.jsx']) || ''
   let file = null
   let lineNo = 0
@@ -34,7 +46,7 @@ function addedLines(cwd) {
     if (l.startsWith('+++ ')) { file = l.slice(4).replace(/^b\//, ''); continue }
     const h = l.match(/^@@ -\d+(?:,\d+)? \+(\d+)/)
     if (h) { lineNo = Number(h[1]); continue }
-    if (file && file !== '/dev/null' && l.startsWith('+')) {
+    if (file && file !== '/dev/null' && l.startsWith('+') && isFresh(path.join(top, file))) {
       out.set(file, [...(out.get(file) || []), { line: lineNo, text: l.slice(1) }])
       lineNo += 1
     }
@@ -42,7 +54,7 @@ function addedLines(cwd) {
   const untracked = (git(cwd, ['ls-files', '--others', '--exclude-standard']) || '').split('\n').filter(f => CODE.test(f))
   for (const f of untracked) {
     const abs = path.join(cwd, f)
-    if (!fs.existsSync(abs) || fs.statSync(abs).size > 512 * 1024) continue
+    if (!isFresh(abs) || fs.statSync(abs).size > 512 * 1024) continue
     out.set(f, fs.readFileSync(abs, 'utf8').split('\n').map((text, i) => ({ line: i + 1, text })))
   }
   return out
@@ -125,7 +137,7 @@ process.stdin.on('end', () => {
   const cwd = input.cwd || process.cwd()
   if (!git(cwd, ['rev-parse', '--git-dir'])) return
 
-  const all = [...addedLines(cwd)].flatMap(([file, lines]) => scanLines(file, lines))
+  const all = [...addedLines(cwd, sessionStart(input))].flatMap(([file, lines]) => scanLines(file, lines))
   if (all.length === 0) return
   const bySeverity = { critical: 0, high: 0, med: 0, low: 0 }
   for (const f of all) bySeverity[f.severity]++
