@@ -23,6 +23,8 @@ if [ ! -x "$FIXTURE/node_modules/.bin/playwright" ]; then
   printf '{ "name": "autopilot-smoke", "private": true, "scripts": { "test": "true" } }\n' > "$FIXTURE/package.json"
   (cd "$FIXTURE" && npm install --no-save --silent playwright@1.63.0) || { echo "playwright install failed" >&2; exit 2; }
 fi
+# Another Playwright version on this machine prunes the browsers this one needs: reinstall (no-op when present).
+(cd "$FIXTURE" && npx --no-install playwright install chromium-headless-shell >/dev/null 2>&1) || { echo "playwright browser install failed" >&2; exit 2; }
 printf '<!doctype html><html><body><h1>Smoke page</h1></body></html>\n' > "$FIXTURE/index.html"
 git -C "$FIXTURE" rev-parse --git-dir >/dev/null 2>&1 || git -C "$FIXTURE" init -q
 
@@ -35,9 +37,9 @@ echo "1. auto-screenshot"
 mkdir -p "$SHOTS"
 before=$(ls "$SHOTS" | wc -l)
 out=$(cd "$FIXTURE" && claude -p --model sonnet --allowedTools "Edit" "Read" "Bash(npm test)" -- \
-  "Use the Edit tool to change 'Smoke page' to 'Smoke page edited' in index.html. Then run exactly: npm test. Then quote verbatim any line starting with [screenshot] that you received, or say NONE." 2>&1)
+  "Use the Edit tool to change 'Smoke page' to 'Smoke page edited' in index.html; if the edit is held, retry it once. Then run exactly: npm test. Then quote verbatim any line starting with [screenshot] that you received, or say NONE." 2>&1)
 after=$(ls "$SHOTS" | wc -l)
-check "the session saw a [screenshot] note" '[[ "$out" == *"[screenshot]"* ]]'
+check "the session saw a capture note" '[[ "$out" == *"captured at"* ]]'
 check "exactly one new screenshot file ($((after - before)))" '[ $((after - before)) -eq 1 ]'
 
 echo "2. /audit without a client"

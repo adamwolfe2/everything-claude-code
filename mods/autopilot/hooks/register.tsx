@@ -265,6 +265,9 @@ async function autoScreenshot($: EngineInterface): Promise<string | undefined> {
   })
   if (run.exitCode !== 0) {
     $.ui.log(`autopilot screenshot: playwright exited ${run.exitCode}: ${run.stderr.slice(0, 160)}`)
+    // Another Playwright version prunes the browsers this one needs; say so rather than skip silently.
+    if (run.stderr.includes("Executable doesn't exist"))
+      return `[screenshot] UI changed and checks pass, but the screenshot failed: Playwright's browser is missing. Run \`npx playwright install chromium chromium-headless-shell\` in ${await $.session.root()}, re-run the check, and read the image before saying done.`
     return undefined
   }
   return `[screenshot] UI changed and checks pass. ${url} captured at ${path} (first 1440x900 viewport). Read that image and confirm the change looks right before saying done; if the change sits below the fold, take your own shot of it.`
@@ -577,7 +580,8 @@ export const register: Register = on => {
             return undefined
           })
           if (note !== undefined) {
-            s.hasLooked = true
+            // A repair note is not a look: the next passing check tries the shot again.
+            s.hasLooked = note.includes(' captured at ')
             notes.push(note)
           }
         }

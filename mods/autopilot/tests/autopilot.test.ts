@@ -3,7 +3,7 @@ import type { On } from 'claude-code'
 
 const ROUTES = JSON.stringify({ routes: [{ id: 'ship', patterns: ['ship it'], tool: '/cap' }] })
 
-function bottom(on: On, log: { registered: string[]; tools: string[]; writes: string[]; contexts: string[][]; root?: string; onText?: (text: string) => void; runs?: string[][]; files?: Map<string, string>; session?: string; dirs?: Record<string, { name: string; kind: string; isLink?: boolean }[]> }) {
+function bottom(on: On, log: { registered: string[]; tools: string[]; writes: string[]; contexts: string[][]; root?: string; onText?: (text: string) => void; runs?: string[][]; files?: Map<string, string>; session?: string; dirs?: Record<string, { name: string; kind: string; isLink?: boolean }[]>; noBrowser?: boolean }) {
   on('env.get', () => ({ value: '/home/adam' }))
   on('fs.read', (_$, e) => ({ value: log.files?.get(e.path) ?? (e.path.endsWith('AGENTS.md') ? 'Rule: VP leads go to Close.' : ROUTES) }))
   on('fs.write', (_$, e) => {
@@ -13,6 +13,8 @@ function bottom(on: On, log: { registered: string[]; tools: string[]; writes: st
   })
   on('process.run', (_$, e) => {
     log.runs?.push([...e.argv])
+    if (log.noBrowser && e.argv.includes('playwright'))
+      return { value: { exitCode: 1, stdout: '', stderr: "Error: Executable doesn't exist at /x/ms-playwright/chromium_headless_shell-1243", isStdoutTruncated: false, isStderrTruncated: false } }
     const [cmd, sub] = e.argv
     const stdout =
       cmd === 'git' && e.argv.includes('--show-toplevel')
@@ -372,4 +374,15 @@ test('/lib lists the library, and with a query asks Claude to load the match', a
   const listed = await $.command.run({ command: 'lib', args: '' } as never)
   expect(listed.text).toContain('pricing')
   expect(listed.text).toContain('mode-review')
+})
+
+test('a screenshot that fails for a missing browser tells Claude how to fix it', async ($, on) => {
+  on('http.fetch', () => ({ value: { status: 200, ok: true, headers: {}, text: '' } as never }))
+  bottom(on, { registered: [], tools: [], writes: [], contexts: [], noBrowser: true })
+  await $.session.start({ cwd: '/home/adam/repo', source: 'startup' } as never)
+  await $.tool.call({ tool: 'Edit', file_path: '/home/adam/repo/page.tsx', old_string: 'a', new_string: 'b' } as never)
+  const ran = await $.tool.call({ tool: 'Bash', command: 'pnpm test' } as never)
+  expect(ran.context?.join(' ') ?? '').toContain('npx playwright install chromium')
+  const again = await $.tool.call({ tool: 'Bash', command: 'pnpm test' } as never)
+  expect(again.context?.join(' ') ?? '').toContain('[screenshot]')
 })
