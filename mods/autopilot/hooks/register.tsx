@@ -29,6 +29,13 @@ const HARD_READS = 600_000_000
 const RULES_MAX = 8_000
 const DEV_PORTS = [3000, 5173]
 const LOCK_LIVE_MS = 20 * 60_000
+const FORMAT_FILE = /\.(tsx?|jsx?|mjs|cjs|css|scss|json)$/
+// [config files, binary, args]: the first the repo has both of wins.
+// ponytail: a "prettier" key in package.json is not detected; add it if a repo relies on one.
+const FORMATTERS: [string[], string, string[]][] = [
+  [['biome.json', 'biome.jsonc'], 'biome', ['format', '--write']],
+  [['.prettierrc', '.prettierrc.json', '.prettierrc.js', '.prettierrc.mjs', '.prettierrc.yaml', 'prettier.config.js', 'prettier.config.mjs'], 'prettier', ['--write']],
+]
 const CORRECTION =
   /\b(that'?s not what i|not what i (asked|wanted|meant)|still (broken|not working|wrong)|(didn'?t|doesn'?t) work|you (missed|forgot|ignored|didn'?t))\b/i
 const CORRECTION_NOTE =
@@ -203,6 +210,25 @@ async function checkoutClash($: EngineInterface, file: string): Promise<string |
   if (!other || other.session === me || now - other.at > LOCK_LIVE_MS || s.warnedCheckouts.has(top)) return undefined
   s.warnedCheckouts.add(top)
   return `[checkout] Another Claude session (${other.session.slice(0, 8)}) edited ${top} ${Math.round((now - other.at) / 60_000)} min ago; two sessions in one checkout overwrite each other. Call EnterWorktree and make this edit there. If that session is finished, retry the edit and it goes through.`
+}
+
+// Formats one edited file with the repo's own formatter, as Boris Cherny's PostToolUse hook does.
+async function formatFile($: EngineInterface, file: string) {
+  if (!FORMAT_FILE.test(file)) return
+  const run = await $.process.run(['git', '-C', file.slice(0, file.lastIndexOf('/')) || '/', 'rev-parse', '--show-toplevel'], {
+    timeoutMs: 5_000,
+  })
+  if (run.exitCode !== 0) return
+  const top = run.stdout.trim()
+  for (const [configs, name, args] of FORMATTERS) {
+    const bin = `${top}/node_modules/.bin/${name}`
+    if (!(await $.fs.exists(bin))) continue
+    const hasConfig = await Promise.all(configs.map(c => $.fs.exists(`${top}/${c}`)))
+    if (!hasConfig.includes(true)) continue
+    const out = await $.process.run([bin, ...args, file], { cwd: top, timeoutMs: 20_000 })
+    if (out.exitCode !== 0) $.ui.log(`autopilot format: ${name} exited ${out.exitCode}: ${out.stderr.slice(0, 160)}`, { to: 'debug' })
+    return
+  }
 }
 
 function readLock($: EngineInterface, text: string): { session: string; at: number } | undefined {
@@ -488,6 +514,8 @@ export const register: Register = on => {
     } else if (EDIT_TOOL.test(e.tool)) {
       s.edits += 1
       const path = 'file_path' in e ? String(e.file_path) : ''
+      // Logged, not thrown: the outer catch would re-run the edit.
+      await formatFile($, path).catch((err: unknown) => $.ui.log(`autopilot format: ${String(err)}`, { to: 'debug' }))
       if (UI_FILE.test(path)) {
         s.isUiTouched = true
         s.hasLooked = false

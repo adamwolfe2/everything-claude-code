@@ -290,3 +290,16 @@ test('an edit with no other live session on the checkout goes straight through',
   expect(ran.deny).toBeUndefined()
   expect([...files.keys()].some(k => k.endsWith('_home_adam_repo.json'))).toBe(true)
 })
+
+test("an edited file is formatted with the repo's own prettier, and only where the repo has one", async ($, on) => {
+  const runs: string[][] = []
+  const files = new Map([['/home/adam/repo/.prettierrc', '{}'], ['/home/adam/repo/node_modules/.bin/prettier', '']])
+  bottom(on, { registered: [], tools: [], writes: [], contexts: [], files, runs })
+  await $.session.start({ cwd: '/home/adam/repo', source: 'startup' } as never)
+  await $.tool.call({ tool: 'Edit', file_path: '/home/adam/repo/a.ts', old_string: 'a', new_string: 'b' } as never)
+  expect(runs).toContainEqual(['/home/adam/repo/node_modules/.bin/prettier', '--write', '/home/adam/repo/a.ts'])
+  files.delete('/home/adam/repo/.prettierrc')
+  runs.length = 0
+  await $.tool.call({ tool: 'Edit', file_path: '/home/adam/repo/b.ts', old_string: 'a', new_string: 'b' } as never)
+  expect(runs.some(a => a[0]?.endsWith('prettier'))).toBe(false)
+})
