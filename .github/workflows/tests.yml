@@ -1,0 +1,25 @@
+name: tests
+on:
+  push:
+    branches: [harness/red-tier-autonomy, main]
+  pull_request:
+
+jobs:
+  harness:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Harness hooks and scripts
+        run: node tests/run-all.js
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Autopilot mod tests
+        # Loading the mod writes its engine types, which tsc below reads.
+        run: claude plugin test mods/autopilot
+      - name: Autopilot mod validate
+        run: claude plugin validate mods/autopilot
+      - name: Autopilot mod typecheck
+        run: npx -y -p typescript@latest tsc -p mods/autopilot --noEmit
