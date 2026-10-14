@@ -4,6 +4,8 @@ import type { EngineInterface, Register, ToolCallResult } from 'claude-code'
 import type { Chip } from '../types'
 
 import { registerHq, registerHqCommand } from './hq'
+import type { LibraryEntry } from './library'
+import { HINT_SCORE, loadLibrary, matchLibrary } from './library'
 
 const chips = atom({ plugin: 'autopilot', key: 'chips' } as const, [])
 
@@ -136,6 +138,8 @@ const s = {
   isMistakeNudged: false,
   waiting: '',
   warnedCheckouts: new Set<string>(),
+  library: [] as LibraryEntry[],
+  hinted: new Set<string>(),
 }
 
 async function refresh($: EngineInterface) {
@@ -231,14 +235,9 @@ async function formatFile($: EngineInterface, file: string) {
   }
 }
 
-// One line per typed prompt in the harness telemetry, so /digest can report how often Adam corrects Claude.
-async function logPrompt($: EngineInterface, isCorrection: boolean) {
-  const line = JSON.stringify({
-    ts: new Date(await $.clock.now()).toISOString(),
-    type: 'autopilot.prompt',
-    project: s.project || undefined,
-    isCorrection,
-  })
+// One JSON line in the harness telemetry: typed prompts (correction rate) and skill use (pruning).
+async function logEvent($: EngineInterface, event: Record<string, unknown>) {
+  const line = JSON.stringify({ ts: new Date(await $.clock.now()).toISOString(), project: s.project || undefined, ...event })
   const run = await $.process.run(['sh', '-c', 'printf "%s\\n" "$1" >> "$2"', 'sh', line, `${s.home}/.claude/telemetry.jsonl`])
   if (run.exitCode !== 0) $.ui.log(`autopilot telemetry: append exited ${run.exitCode}`, { to: 'debug' })
 }
@@ -374,20 +373,26 @@ export const register: Register = on => {
       ['codex', 'Codex reviews uncommitted changes; Claude triages the findings'],
       ['audit', 'Call notes to audit, plan and SOW doc, plus a CRM record you confirm'],
       ['site', 'Client site from the partner-page template, built locally; deploy on your say'],
+      ['lib', 'Archived skills: list them, or load one for this session (/lib <what you need>)'],
     ] as const
+    s.library = await loadLibrary($, s.home).catch((err: unknown) => {
+      $.ui.log(`autopilot library: ${String(err)}`, { to: 'debug' })
+      return []
+    })
     for (const [name, description] of commands) await $.command.register({ name, description })
     await registerHqCommand($)
     await $.tool.register({
       name: 'run',
       description:
-        "Adam's autopilot actions. next: save the handoff you wrote, then clear the chat and resume from it after this turn ends. away: start unattended mode (up to 15 turns, stops when Adam types). codex: Codex reviews the uncommitted changes and returns its findings for you to verify.",
+        "Adam's autopilot actions. next: save the handoff you wrote, then clear the chat and resume from it after this turn ends. away: start unattended mode (up to 15 turns, stops when Adam types). codex: Codex reviews the uncommitted changes and returns its findings for you to verify. skill: load an archived skill or command (not in your skill list) by name or by what it is for.",
       inputSchema: {
         type: 'object',
         properties: {
-          action: { type: 'string', enum: ['next', 'away', 'codex'] },
+          action: { type: 'string', enum: ['next', 'away', 'codex', 'skill'] },
           handoff: { type: 'string', description: 'action=next: the full handoff markdown' },
           goal: { type: 'string', description: 'action=away: the mission to keep working on' },
           focus: { type: 'string', description: 'action=codex: optional review focus' },
+          query: { type: 'string', description: 'action=skill: the archived skill name, or what it is for' },
         },
         required: ['action'],
       },
@@ -429,8 +434,15 @@ export const register: Register = on => {
     const isCorrection = CORRECTION.test(e.text)
     // Only Adam typing (terminal or remote control) counts; headless runs would dilute the rate.
     if (e.origin.kind === 'composer' || e.origin.kind === 'bridge')
-      await logPrompt($, isCorrection).catch((err: unknown) => $.ui.log(`autopilot telemetry: ${String(err)}`, { to: 'debug' }))
+      await logEvent($, { type: 'autopilot.prompt', isCorrection }).catch((err: unknown) => $.ui.log(`autopilot telemetry: ${String(err)}`, { to: 'debug' }))
     const notes: string[] = isCorrection ? [CORRECTION_NOTE] : []
+    const fit = matchLibrary(s.library, e.text)[0]
+    if (fit && fit.score >= HINT_SCORE && !s.hinted.has(fit.entry.name)) {
+      s.hinted.add(fit.entry.name)
+      notes.push(
+        `[library] Archived skill "${fit.entry.name}" fits this request: ${fit.entry.description.slice(0, 140)} If it helps, load it with mcp__autopilot__run action=skill query="${fit.entry.name}".`,
+      )
+    }
     const project = s.projects.length > 0 ? detectProject(e.text) : undefined
     if (project && !s.loadedProjects.has(project)) {
       s.loadedProjects.add(project)
@@ -454,7 +466,7 @@ export const register: Register = on => {
   }).catch(($, e, next) => next(e))
 
   on('tool.call', { tool: RUN_TOOL }, async ($, e) => {
-    const input = e as unknown as { action: string; handoff?: string; goal?: string; focus?: string }
+    const input = e as unknown as { action: string; handoff?: string; goal?: string; focus?: string; query?: string }
     $.ui.toast(`Using /${input.action}`)
     if (input.action === 'next') {
       if (!input.handoff?.trim()) return { result: 'Write the handoff and pass it as `handoff`.' }
@@ -473,7 +485,16 @@ export const register: Register = on => {
         result: `Codex review (exit ${exitCode}). Verify each finding against the code; fix the confirmed ones, list rejected ones with a one-line reason.\n\n${out}`,
       }
     }
-    return { result: `Unknown action ${input.action}; use next, away or codex.` }
+    if (input.action === 'skill') {
+      const [best, ...rest] = matchLibrary(s.library, input.query ?? '')
+      if (!best) return { result: `No archived skill matches "${input.query ?? ''}". Library: ${s.library.map(l => l.name).join(', ')}` }
+      await logEvent($, { type: 'autopilot.skill', name: best.entry.name, source: 'library' })
+      const others = rest.slice(0, 3).map(m => m.entry.name)
+      return {
+        result: `Archived skill "${best.entry.name}" (${best.entry.path}), loaded for this session only. Follow it for this task.${others.length > 0 ? ` Other matches: ${others.join(', ')}.` : ''}\n\n${await $.fs.read(best.entry.path)}`,
+      }
+    }
+    return { result: `Unknown action ${input.action}; use next, away, codex or skill.` }
   }).catch(($, e, next) => ({ result: `autopilot run failed: ${String(next.error)}` }))
 
   on('tool.call', { tool: 'mcp__autopilot__wait' }, async ($, e) => {
@@ -526,6 +547,10 @@ export const register: Register = on => {
     if (ran.deny !== undefined || e.agentId !== undefined) return ran
     if (e.tool === 'Skill' && 'skill' in e) {
       $.ui.toast(`Using /${String(e.skill)}`)
+      const name = String(e.skill).split(':').at(-1) ?? ''
+      await logEvent($, { type: 'autopilot.skill', name, source: 'tool' }).catch((err: unknown) =>
+        $.ui.log(`autopilot telemetry: ${String(err)}`, { to: 'debug' }),
+      )
     } else if (EDIT_TOOL.test(e.tool)) {
       s.edits += 1
       const path = 'file_path' in e ? String(e.file_path) : ''
@@ -600,6 +625,26 @@ export const register: Register = on => {
     }
     return next(e)
   })
+
+  // Every slash command Adam types, for pruning: an unused command can be archived to /lib.
+  on('command.run', async ($, e, next) => {
+    const kind = e.origin?.kind
+    if (kind === 'composer' || kind === 'bridge')
+      await logEvent($, { type: 'autopilot.skill', name: e.command, source: 'command' }).catch((err: unknown) =>
+        $.ui.log(`autopilot telemetry: ${String(err)}`, { to: 'debug' }),
+      )
+    return next(e)
+  })
+
+  on('command.run', { command: 'lib' }, async ($, e) => {
+    const query = e.args.trim()
+    if (!query) {
+      const list = s.library.map(l => `- ${l.name}: ${l.description.slice(0, 90)}`).join('\n')
+      return { text: `Archived skills (/lib <what you need> loads one):\n${list || '(none)'}` }
+    }
+    submitSoon($, `Load the archived skill for "${query}" with mcp__autopilot__run action=skill query="${query}", then follow it.`)
+    return { text: `Loading the archived skill for "${query}".` }
+  }).catch(($, e, next) => ({ text: `autopilot /${e.command} failed: ${String(next.error)}` }))
 
   on('command.run', { command: 'next' }, async ($, e) => {
     const handoff = await $.model.fork({ prompt: `${HANDOFF}\n${e.args}` })

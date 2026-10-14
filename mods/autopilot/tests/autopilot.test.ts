@@ -3,7 +3,7 @@ import type { On } from 'claude-code'
 
 const ROUTES = JSON.stringify({ routes: [{ id: 'ship', patterns: ['ship it'], tool: '/cap' }] })
 
-function bottom(on: On, log: { registered: string[]; tools: string[]; writes: string[]; contexts: string[][]; root?: string; onText?: (text: string) => void; runs?: string[][]; files?: Map<string, string>; session?: string }) {
+function bottom(on: On, log: { registered: string[]; tools: string[]; writes: string[]; contexts: string[][]; root?: string; onText?: (text: string) => void; runs?: string[][]; files?: Map<string, string>; session?: string; dirs?: Record<string, { name: string; kind: string }[]> }) {
   on('env.get', () => ({ value: '/home/adam' }))
   on('fs.read', (_$, e) => ({ value: log.files?.get(e.path) ?? (e.path.endsWith('AGENTS.md') ? 'Rule: VP leads go to Close.' : ROUTES) }))
   on('fs.write', (_$, e) => {
@@ -46,12 +46,12 @@ function bottom(on: On, log: { registered: string[]; tools: string[]; writes: st
   on('session.usage', () => ({ value: { startedAt: 0, context: { window: 200000, percent: 20 }, rateLimits: [] } }))
   on('session.id', () => ({ value: log.session ?? 'me-session' }))
   on('session.root', () => ({ value: log.root ?? '/home/adam/repo' }))
-  on('fs.list', () => ({ value: [
+  on('fs.list', (_$, e) => ({ value: (log.dirs?.[e.path] as never) ?? [
     { name: 'vending-website', kind: 'dir', size: 0, mtimeMs: 0, isLink: false },
     { name: 'sendmore', kind: 'dir', size: 0, mtimeMs: 0, isLink: false },
     { name: 'Downloads', kind: 'dir', size: 0, mtimeMs: 0, isLink: false },
   ] }))
-  on('fs.exists', (_$, e) => ({ value: log.files?.has(e.path) || /vending-website\/(\.git|AGENTS\.md)$|sendmore\/\.git$/.test(e.path) }))
+  on('fs.exists', (_$, e) => ({ value: log.files?.has(e.path) || e.path in (log.dirs ?? {}) || /vending-website\/(\.git|AGENTS\.md)$|sendmore\/\.git$/.test(e.path) }))
   on('fs.stat', (_$, e) => ({ value: { kind: 'file', size: e.path.endsWith('big.ts') ? 90_000 : e.path.endsWith('mid.ts') ? 30_000 : 500, mtimeMs: 0, isLink: false } }))
   on('ui.notify', () => ({ value: { isSent: true, channel: 'terminal_bell' } }))
   on('ui.open', () => ({ value: { isPlaced: true } as never }))
@@ -76,7 +76,7 @@ test('registers commands and the run tool; suggests /cap and /verify; a passing 
   const log = { registered: [] as string[], tools: [] as string[], writes: [] as string[], contexts: [] as string[][] }
   bottom(on, log)
   await $.session.start({ cwd: '/home/adam/repo', source: 'startup' } as never)
-  expect(log.registered).toEqual(['next', 'away', 'left', 'codex', 'audit', 'site', 'hq'])
+  expect(log.registered).toEqual(['next', 'away', 'left', 'codex', 'audit', 'site', 'lib', 'hq'])
   expect(log.tools).toEqual(['run', 'wait'])
 
   await $.prompt.submit({ text: 'looks good, ship it', wait: false, origin: { kind: 'composer' } } as never)
@@ -314,4 +314,62 @@ test('each typed prompt is logged to telemetry, marked when it corrects Claude',
   await $.prompt.submit({ text: 'run the check', wait: false, origin: { kind: 'sdk' } } as never)
   const logged = runs.filter(a => a.includes('/home/adam/.claude/telemetry.jsonl')).map(a => JSON.parse(a[4] ?? '{}'))
   expect(logged.map(l => [l.type, l.isCorrection])).toEqual([['autopilot.prompt', false], ['autopilot.prompt', true]])
+})
+
+const LIB = '/home/adam/everything-claude-code/archive'
+function library() {
+  const files = new Map([
+    [`${LIB}/skills/pricing/SKILL.md`, '---\nname: pricing\ndescription: Pricing strategy for subscription plans, tiers and packaging\n---\nPRICING BODY'],
+    [`${LIB}/skills/clerk/SKILL.md`, '---\ndescription: Clerk auth setup and middleware\n---\nCLERK BODY'],
+    [`${LIB}/commands/mode-review.md`, '---\ndescription: Code review context\n---\nREVIEW BODY'],
+  ])
+  const dirs = {
+    [`${LIB}/skills`]: [{ name: 'pricing', kind: 'dir' }, { name: 'clerk', kind: 'dir' }],
+    [`${LIB}/commands`]: [{ name: 'mode-review.md', kind: 'file' }],
+  }
+  return { files, dirs }
+}
+const telemetry = (runs: string[][]) => runs.filter(a => a.includes('/home/adam/.claude/telemetry.jsonl')).map(a => JSON.parse(a[4] ?? '{}'))
+
+test('the run tool loads an archived skill by query and logs the library load', async ($, on) => {
+  const runs: string[][] = []
+  bottom(on, { registered: [], tools: [], writes: [], contexts: [], runs, ...library() })
+  await $.session.start({ cwd: '/home/adam/repo', source: 'startup' } as never)
+  const out = await $.tool.call({ tool: 'mcp__autopilot__run', action: 'skill', query: 'pricing tiers' } as never)
+  expect(String(out.result)).toContain('PRICING BODY')
+  expect(telemetry(runs)).toContainEqual(expect.objectContaining({ type: 'autopilot.skill', name: 'pricing', source: 'library' }))
+  const none = await $.tool.call({ tool: 'mcp__autopilot__run', action: 'skill', query: 'kubernetes' } as never)
+  expect(String(none.result)).toContain('No archived skill')
+})
+
+test('a prompt that fits an archived skill gets a one-time library hint', async ($, on) => {
+  const lib = library()
+  const log = { registered: [], tools: [], writes: [], contexts: [] as string[][], ...lib }
+  bottom(on, log)
+  await $.session.start({ cwd: '/home/adam/repo', source: 'startup' } as never)
+  await $.prompt.submit({ text: 'set pricing tiers for the subscription plans', wait: false, origin: { kind: 'composer' } } as never)
+  expect(log.contexts.flat().join(' ')).toContain('[library] Archived skill "pricing"')
+  await $.prompt.submit({ text: 'and the pricing tiers for subscription plans again', wait: false, origin: { kind: 'composer' } } as never)
+  expect(log.contexts.flat().join(' ').split('[library]').length).toBe(2)
+  await $.prompt.submit({ text: 'fix the footer', wait: false, origin: { kind: 'composer' } } as never)
+  expect(log.contexts.at(-1)?.join(' ') ?? '').not.toContain('[library]')
+})
+
+test('skill and typed slash command use is logged to telemetry', async ($, on) => {
+  const runs: string[][] = []
+  bottom(on, { registered: [], tools: [], writes: [], contexts: [], runs })
+  await $.session.start({ cwd: '/home/adam/repo', source: 'startup' } as never)
+  await $.tool.call({ tool: 'Skill', skill: 'everything-claude-code:impeccable' } as never)
+  await $.command.run({ command: 'left', args: '', origin: { kind: 'composer' } } as never)
+  const names = telemetry(runs).filter(t => t.type === 'autopilot.skill').map(t => [t.name, t.source])
+  expect(names).toEqual([['impeccable', 'tool'], ['left', 'command']])
+})
+
+test('/lib lists the library, and with a query asks Claude to load the match', async ($, on) => {
+  const log: Parameters<typeof bottom>[1] = { registered: [], tools: [], writes: [], contexts: [], ...library() }
+  bottom(on, log)
+  await $.session.start({ cwd: '/home/adam/repo', source: 'startup' } as never)
+  const listed = await $.command.run({ command: 'lib', args: '' } as never)
+  expect(listed.text).toContain('pricing')
+  expect(listed.text).toContain('mode-review')
 })
