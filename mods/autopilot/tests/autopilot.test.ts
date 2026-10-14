@@ -60,7 +60,8 @@ function bottom(on: On, log: { registered: string[]; tools: string[]; writes: st
     return { text: e.text }
   })
   on('prompt.compose', () => ({ sections: [{ id: 'core', text: 'core', scope: 'shared' }] }))
-  on('tool.call', () => ({ result: 'ok' }))
+  // A Bash command carrying `#fail` fails, as a red check does live.
+  on('tool.call', (_$, e) => ({ result: 'ok', ...('command' in e && String(e.command).includes('#fail') ? { isError: true } : {}) }))
   on('turn.complete', () => ({ text: '' }))
   on('ui.render', () => null as never)
   on('ui.status', () => ({ value: undefined }))
@@ -196,16 +197,25 @@ test('a passing check after a UI edit screenshots the running dev server once', 
   expect(second.context?.join(' ') ?? '').not.toContain('[screenshot]')
 })
 
-test('in a bug session the mistake nudge does not swallow the screenshot', async ($, on) => {
+test('a check that fails, then passes after edits, nudges /log-mistake alongside the screenshot', async ($, on) => {
   on('http.fetch', () => ({ value: { status: 200, ok: true, headers: {}, text: '' } as never }))
   bottom(on, { registered: [], tools: [], writes: [], contexts: [] })
   await $.session.start({ cwd: '/home/adam/repo', source: 'startup' } as never)
-  await $.prompt.submit({ text: 'the hero is broken on mobile', wait: false, origin: { kind: 'composer' } } as never)
+  await $.tool.call({ tool: 'Bash', command: 'pnpm test #fail' } as never)
   await $.tool.call({ tool: 'Edit', file_path: '/home/adam/repo/page.tsx', old_string: 'a', new_string: 'b' } as never)
   const ran = await $.tool.call({ tool: 'Bash', command: 'pnpm test' } as never)
   const context = ran.context?.join(' ') ?? ''
   expect(context).toContain('[mistake-log]')
   expect(context).toContain('[screenshot]')
+})
+
+test('talking about a bug without a failed check does not nudge /log-mistake', async ($, on) => {
+  bottom(on, { registered: [], tools: [], writes: [], contexts: [] })
+  await $.session.start({ cwd: '/home/adam/repo', source: 'startup' } as never)
+  await $.prompt.submit({ text: 'fix any bug the live tests reveal', wait: false, origin: { kind: 'composer' } } as never)
+  await $.tool.call({ tool: 'Edit', file_path: '/home/adam/repo/a.ts', old_string: 'a', new_string: 'b' } as never)
+  const ran = await $.tool.call({ tool: 'Bash', command: 'pnpm test' } as never)
+  expect(ran.context?.join(' ') ?? '').not.toContain('[mistake-log]')
 })
 
 test('/audit submits the audit flow for the named client, CRM write left to Adam', async ($, on) => {

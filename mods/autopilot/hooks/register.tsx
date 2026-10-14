@@ -17,7 +17,6 @@ const RUN_TOOL = 'mcp__autopilot__run'
 const CTX_NUDGE = 55
 const CTX_PUSH = 75
 const AWAY_MAX = 15
-const BUG_TALK = /\b(bug|broken|not working|failing|regression|crash|root cause)\b/i
 const MISTAKE_NOTE =
   '[mistake-log] This looks like a verified bug fix. Run /log-mistake: root cause, the CLASS of mistake, and one enforceable check that would have caught it.'
 const READ_DENY_CHARS = 40_000
@@ -125,7 +124,7 @@ const s = {
   cacheReads: 0,
   budget: 'ok' as Budget,
   budgetNoted: 'ok' as Budget,
-  isBugSession: false,
+  hasFailedCheck: false,
   isMistakeNudged: false,
   waiting: '',
 }
@@ -213,6 +212,7 @@ async function freshStart($: EngineInterface, handoff: Handoff) {
   s.cacheReads = 0
   s.budget = 'ok'
   s.budgetNoted = 'ok'
+  s.hasFailedCheck = false
   s.isMistakeNudged = false
   await $.prompt.submit({ text: `Resume from the handoff at ${handoff.path}:\n\n${handoff.text}` })
 }
@@ -358,7 +358,6 @@ export const register: Register = on => {
     s.awayLeft = 0
     const text = ` ${e.text.toLowerCase()} `
     const isCorrection = CORRECTION.test(e.text)
-    if (BUG_TALK.test(e.text)) s.isBugSession = true
     const notes: string[] = isCorrection ? [CORRECTION_NOTE] : []
     const project = s.projects.length > 0 ? detectProject(e.text) : undefined
     if (project && !s.loadedProjects.has(project)) {
@@ -457,7 +456,8 @@ export const register: Register = on => {
       const command = String(e.command)
       if (CHECK.test(command) && ran.isError !== true) {
         const notes: string[] = []
-        if (s.edits > 0 && s.isBugSession && !s.isMistakeNudged) {
+        // Red, edits, then green: a fix worth logging. Talk of a bug alone is not one.
+        if (s.edits > 0 && s.hasFailedCheck && !s.isMistakeNudged) {
           s.isMistakeNudged = true
           notes.push(MISTAKE_NOTE)
         }
@@ -475,6 +475,7 @@ export const register: Register = on => {
         }
         if (notes.length > 0) return { ...ran, context: [...(ran.context ?? []), ...notes] }
       }
+      if (CHECK.test(command) && ran.isError === true) s.hasFailedCheck = true
       if (LOOK.test(command)) s.hasLooked = true
     } else if (LOOK_TOOL.test(e.tool)) {
       s.hasLooked = true
