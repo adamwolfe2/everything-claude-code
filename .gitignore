@@ -33,3 +33,11 @@ evals/results/
 
 # agent worktrees (ephemeral)
 .claude/worktrees/
+
+# session handoff (not committed)
+HANDOFF.md
+
+# local caches and backups (not committed)
+skills/.trash/
+skills/synced/
+*.bak-retire-*

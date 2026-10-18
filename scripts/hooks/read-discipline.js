@@ -19,6 +19,9 @@ process.stdin.on('end', () => {
   const p = t.file_path;
   // already scoped, or no path → allow
   if (!p || t.offset != null || t.limit != null) { process.stdout.write(d); process.exit(0); }
+  // Images/PDFs are tokenized by dimensions, not bytes — a 200KB JPEG is a ~1.5K-token
+  // read, so byte-size limits deny exactly the cheap reads they should allow.
+  if (/\.(png|jpe?g|gif|webp|avif|bmp|svg|ico|pdf)$/i.test(p)) { process.stdout.write(d); process.exit(0); }
   let lines = 0, chars = 0;
   try {
     const stat = fs.statSync(p);

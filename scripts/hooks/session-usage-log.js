@@ -16,6 +16,9 @@ process.stdin.on('end', () => {
 
   let inp = 0, out = 0, cr = 0, cc = 0, turns = 0;
   const tools = {};
+  // One API response is split across several transcript lines that repeat its
+  // usage; count each message id once (was ~2x overcount, audit 2026-10-16).
+  const seen = new Set();
   try {
     const lines = fs.readFileSync(tp, 'utf8').trim().split('\n');
     for (const ln of lines) {
@@ -23,7 +26,9 @@ process.stdin.on('end', () => {
       const m = o.message;
       if (!m) continue;
       const u = m.usage;
-      if (u) {
+      const id = m.id || o.requestId;
+      if (u && !(id && seen.has(id))) {
+        if (id) seen.add(id);
         inp += u.input_tokens || 0;
         out += u.output_tokens || 0;
         cr += u.cache_read_input_tokens || 0;

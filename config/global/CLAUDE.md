@@ -37,6 +37,7 @@ Never send a message as Adam (sms:/tel:/mailto:/"Text us" hand-offs). Ask before
 
 ## Browser
 `aside` is default (Adam's identity: logins, cookies). `browser-harness` only for raw CDP or Adam's tabs; see its skill.
+Never stop at the first browser failure. Aside "isn't running" / "fetch failed" -> `open -ga Aside`, wait until `aside session list` exits 0, retry. Still failing -> `browser-harness` (Adam's Chrome is pre-authorized for this fallback). Both fail -> report each error verbatim plus the one action Adam must take.
 
 ## Standing rules
 - Push env changes to Vercel whenever `.env.local` changes. Batch commits, push once.
