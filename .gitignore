@@ -41,3 +41,9 @@ HANDOFF.md
 skills/.trash/
 skills/synced/
 *.bak-retire-*
+
+# transitions.dev: license forbids redistribution; installed locally only
+skills/transitions-dev/
+skills/transitions-polish/
+skills/transitions-ui-generation/
+skills/impeccable/scripts/data/font-index.json

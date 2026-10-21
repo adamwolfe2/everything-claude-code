@@ -11,6 +11,7 @@ Adam describes work in plain English; you pick the tool and say it in one line. 
 - Unfamiliar API -> context7. Prior art -> `/decisions search "<topic>"` first; cross-project decision made -> `/decisions add`.
 - Done means: run the repo's own checks (AGENTS.md), paste real output. Never infer success. Check exit codes, never a piped `| grep` result.
 - Non-trivial diff -> `parallel-review` (code-reviewer + security-reviewer + codex) before `/cap`. UI change -> `design-qa`.
+- DESIGN work (any UI, any repo) -> `taste` sets direction, `impeccable` critiques/polishes. Reference site -> `extract-design` first. Motion: `transitions-dev`, `gsap-*`, `react-bits`. Verify in a real browser with `playwright-cli` before calling it done.
 - Ship with `/cap`. Never `--no-verify`. Bug fixed -> `/log-mistake` + a regression eval in ~/.claude/evals/. Repo rule learned -> one line in that repo's AGENTS.md.
 - Broad audit -> propose a Workflow (fan-out + adversarial verify) with a cost estimate; run only on explicit opt-in (`ultracode`, "use a workflow").
 

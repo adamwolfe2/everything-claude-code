@@ -157,8 +157,8 @@
         "bolder",
         "delight"
       ],
-      "tool": "impeccable skill",
-      "why": "frontend craft; reads PRODUCT.md + DESIGN.md",
+      "tool": "taste skill (new pages/redesigns) + impeccable skill (critique/polish)",
+      "why": "anti-slop direction + craft; reads PRODUCT.md + DESIGN.md",
       "tier": "core"
     },
     {
@@ -703,6 +703,73 @@
       "tool": "packs on vercel",
       "pack": "vercel",
       "why": "the vercel pack isn't loaded in this folder. Offer to run `packs on vercel`; it loads in the next session here",
+      "tier": "core"
+    },
+    {
+      "id": "copy-site-design",
+      "patterns": [
+        "extract design",
+        "design tokens from",
+        "copy this site",
+        "copy the design",
+        "design system from",
+        "use this site as",
+        "make it look like"
+      ],
+      "tool": "extract-design skill",
+      "why": "designlang: pull any URL's tokens/Tailwind/shadcn theme as the foundation, then add our content",
+      "tier": "core"
+    },
+    {
+      "id": "react-motion-components",
+      "patterns": [
+        "react bits",
+        "animated component",
+        "cool background",
+        "text animation",
+        "animated hero"
+      ],
+      "tool": "react-bits skill",
+      "why": "drop-in animated React components via shadcn registry",
+      "tier": "core"
+    },
+    {
+      "id": "gsap-motion",
+      "patterns": [
+        "gsap",
+        "scrolltrigger",
+        "scroll animation",
+        "timeline animation"
+      ],
+      "tool": "gsap-core skill (+ gsap-scrolltrigger, gsap-react)",
+      "why": "official GreenSock agent skills",
+      "tier": "core"
+    },
+    {
+      "id": "ui-transitions",
+      "patterns": [
+        "transition",
+        "animate the",
+        "micro-interaction",
+        "motion polish",
+        "feels janky",
+        "stagger"
+      ],
+      "tool": "transitions-dev skill (+ transitions-polish)",
+      "why": "tokenized production CSS transitions from transitions.dev",
+      "tier": "core"
+    },
+    {
+      "id": "browser-test",
+      "patterns": [
+        "test the form",
+        "click through",
+        "headless browser",
+        "playwright-cli",
+        "test every edge case"
+      ],
+      "tool": "playwright-cli skill",
+      "why": "headless browser driving for front-end QA",
       "tier": "core"
     }
   ]
