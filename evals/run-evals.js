@@ -308,8 +308,12 @@ function cmdCompare(fileA, fileB) {
 }
 
 const args = parseArgs(process.argv.slice(2))
-const cmd = args._[0] || 'run'
-if (cmd === 'run') cmdRun(args).catch((e) => { console.error(e); process.exit(1) })
+const cmd = args._[0]
+// No default command: `run` spends (claude -p per case), so it must be asked for by name.
+if (!cmd) {
+  console.error('usage: run-evals.js run --set all|harness|tasks [--only <id>] ...  |  compare <A.jsonl> <B.jsonl>')
+  process.exit(1)
+} else if (cmd === 'run') cmdRun(args).catch((e) => { console.error(e); process.exit(1) })
 else if (cmd === 'compare') {
   if (args._.length < 3) { console.error('usage: compare <resultsA.jsonl> <resultsB.jsonl>'); process.exit(1) }
   cmdCompare(args._[1], args._[2])
