@@ -90,6 +90,6 @@ cat <<EOF
 
   4) Re-approve OAuth local MCP on account #2:  supabase · airops
 
-  aside (your logins/passwords) + browser-harness already work on BOTH — no action.
+  browser-harness (your Chrome logins) already works on BOTH — no action.
 EOF
 echo "▶ Full checklist: ~/.claude/knowledge/TWO-ACCOUNT-HANDOFF.md"

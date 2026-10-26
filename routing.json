@@ -441,8 +441,8 @@
         "my password",
         "personalized"
       ],
-      "tool": "aside (mcp__aside__* / `aside`)",
-      "why": "PREFERRED browser tool \u2014 carries Adam's own logins/passwords/cookies/memory; use for anything that must BE Adam (authed dashboards, account actions)",
+      "tool": "browser-harness (Adam's Chrome)",
+      "why": "Adam's Chrome carries his logins/cookies; use for anything that must BE Adam (authed dashboards, account actions). Never Aside.",
       "tier": "core"
     },
     {
@@ -466,8 +466,8 @@
         "my current tabs",
         "this chrome tab"
       ],
-      "tool": "aside (preferred) or browser-harness (raw CDP)",
-      "why": "aside = default (has Adam's identity/passwords); browser-harness = raw-CDP control of the local Chrome session/tabs, parallel cloud browsers, pixel-level work",
+      "tool": "browser-harness (Adam's Chrome)",
+      "why": "only browser tool: raw-CDP control of Adam's Chrome (his logins and tabs). Never Aside.",
       "tier": "core"
     },
     {

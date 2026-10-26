@@ -10,7 +10,7 @@ Evidence: permissions posture currently ranges from `bypassPermissions` (cursive
 | CODING_STANDARDS.md | Single source for conventions. Rules/coding-style.md, patterns.md, testing.md fold INTO it (3 files → 1); performance-audit.md moves to skills (it's a prompt, not a rule) |
 | skills/, commands/, agents/, workflows/ | Global. Never copy into repos |
 | Hooks | Global in settings.json. Per-repo hooks only for repo-specific automation (vendhub asana fetch is the model) |
-| MCP servers | Global: harness-state, aside ONLY. Everything else project-scope — each global server's tool defs load every session in every repo |
+| MCP servers | Global: harness-state ONLY (browser = browser-harness skill; Aside removed 10-26). Everything else project-scope — each global server's tool defs load every session in every repo |
 | Secrets | NEVER in settings.json (blooio + emailbison keys are there today, plus tracked .bak). Move to env refs / keychain; rotate both |
 
 ## Per-project (repo/.claude/ + repo root)

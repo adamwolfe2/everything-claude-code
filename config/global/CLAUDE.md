@@ -37,8 +37,8 @@ Never send a message as Adam (sms:/tel:/mailto:/"Text us" hand-offs). Ask before
 - Packs load by folder via ~/everything-claude-code/projects.json (`packs here`, `packs on <pack>`); never enable a pack globally.
 
 ## Browser
-`aside` is default (Adam's identity: logins, cookies). `browser-harness` only for raw CDP or Adam's tabs; see its skill.
-Never stop at the first browser failure. Aside "isn't running" / "fetch failed" -> `open -ga Aside`, wait until `aside session list` exits 0, retry. Still failing -> `browser-harness` (Adam's Chrome is pre-authorized for this fallback). Both fail -> report each error verbatim plus the one action Adam must take.
+`browser-harness` in Adam's Chrome is the ONLY browser tool (his logins, cookies, tabs; pre-authorized). NEVER use Aside (`mcp__aside__*`, `aside` CLI): removed 10-26 by Adam.
+Never stop at the first browser failure: retry, then report the error verbatim plus the one action Adam must take.
 
 ## Standing rules
 - Push env changes to Vercel whenever `.env.local` changes. Batch commits, push once.

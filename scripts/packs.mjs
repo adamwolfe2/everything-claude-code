@@ -2,7 +2,7 @@
 /**
  * packs — folder-activated tool packs.
  *
- * The global setup stays lean (core skills + context7 + aside). Heavier plugins,
+ * The global setup stays lean (core skills + context7). Heavier plugins,
  * MCP servers and niche skills load only in the projects that need them.
  * projects.json is the single source: `packs` defines each pack, every project
  * lists the packs it wants, and `auto` rules add packs by stack (e.g. Next -> vercel).
