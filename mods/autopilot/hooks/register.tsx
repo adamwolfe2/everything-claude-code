@@ -110,7 +110,7 @@ Adam forgets command names. You choose them for him. When a request or situation
 
 First-try quality: before building, restate the ask as 2-4 acceptance checks; build to them; prove each (test output, screenshot) before saying done.`
 
-type Route = { id: string; patterns: string[]; tool: string }
+type Route = { id: string; patterns: string[]; tool: string; why?: string }
 type Issue = { number: number; title: string; url: string }
 type Budget = 'ok' | 'soft' | 'hard'
 type Handoff = { path: string; text: string }
@@ -240,6 +240,28 @@ async function logEvent($: EngineInterface, event: Record<string, unknown>) {
   const line = JSON.stringify({ ts: new Date(await $.clock.now()).toISOString(), project: s.project || undefined, ...event })
   const run = await $.process.run(['sh', '-c', 'printf "%s\\n" "$1" >> "$2"', 'sh', line, `${s.home}/.claude/telemetry.jsonl`])
   if (run.exitCode !== 0) $.ui.log(`autopilot telemetry: append exited ${run.exitCode}`, { to: 'debug' })
+}
+
+const ROUTE_MAX_CHARS = 1500
+
+// Whole-word match, so "ui" fires on "the ui" but not on "build"; padded patterns like ' cap ' are trimmed first.
+function wordMatch(text: string, pattern: string): boolean {
+  const p = pattern.trim().toLowerCase()
+  if (!p) return false
+  const escaped = p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`(?<![a-z0-9])${escaped}(?![a-z0-9])`).test(text)
+}
+
+// One line per routed prompt: the training data for the weekly evolve loop.
+async function logRoute($: EngineInterface, prompt: string, matched: Route[]) {
+  const line = JSON.stringify({
+    ts: new Date(await $.clock.now()).toISOString(),
+    prompt: prompt.slice(0, 120),
+    matched: matched.map(r => r.id),
+    suggested: matched.map(r => r.tool),
+  })
+  const run = await $.process.run(['sh', '-c', 'printf "%s\\n" "$1" >> "$2"', 'sh', line, `${s.home}/.claude/routing-log.jsonl`])
+  if (run.exitCode !== 0) $.ui.log(`autopilot routing-log: append exited ${run.exitCode}`, { to: 'debug' })
 }
 
 function readLock($: EngineInterface, text: string): { session: string; at: number } | undefined {
@@ -435,9 +457,10 @@ export const register: Register = on => {
     s.awayLeft = 0
     const text = ` ${e.text.toLowerCase()} `
     const isCorrection = CORRECTION.test(e.text)
-    // Only Adam typing (terminal or remote control) counts; headless runs would dilute the rate.
-    if (e.origin.kind === 'composer' || e.origin.kind === 'bridge')
-      await logEvent($, { type: 'autopilot.prompt', isCorrection }).catch((err: unknown) => $.ui.log(`autopilot telemetry: ${String(err)}`, { to: 'debug' }))
+    // Adam types through the desktop app, which arrives as 'sdk' just like `claude -p`; `origin` lets readers split them.
+    const isHuman = e.origin.kind === 'composer' || e.origin.kind === 'bridge' || e.origin.kind === 'sdk'
+    if (isHuman)
+      await logEvent($, { type: 'autopilot.prompt', isCorrection, origin: e.origin.kind }).catch((err: unknown) => $.ui.log(`autopilot telemetry: ${String(err)}`, { to: 'debug' }))
     const notes: string[] = isCorrection ? [CORRECTION_NOTE] : []
     const fit = matchLibrary(s.library, e.text)[0]
     if (fit && fit.score >= HINT_SCORE && !s.hinted.has(fit.entry.name)) {
@@ -461,10 +484,17 @@ export const register: Register = on => {
           : 'Context budget: this session is getting long. Remind Adam once that /next at the next clean boundary keeps it cheap.',
       )
     }
-    s.routerChips = s.routes
-      .filter(r => r.patterns.some(p => text.includes(p)))
+    // Pasted documents and long briefs match everything; route only short, human prompts.
+    const matched = isHuman && e.text.length < ROUTE_MAX_CHARS ? s.routes.filter(r => r.patterns.some(p => wordMatch(text, p))) : []
+    s.routerChips = matched
       .slice(0, 2)
       .map(r => ({ label: r.tool, fill: r.tool.startsWith('/') ? `${r.tool} ` : `Use ${r.tool}: ` }))
+    const top = matched[0]
+    if (top && !s.hinted.has(`route:${top.id}`)) {
+      s.hinted.add(`route:${top.id}`)
+      notes.push(`[router] ${top.tool}: ${top.why ?? top.id}`)
+    }
+    if (matched.length > 0) await logRoute($, e.text, matched).catch((err: unknown) => $.ui.log(`autopilot routing-log: ${String(err)}`, { to: 'debug' }))
     return next(notes.length > 0 ? { ...e, context: [...(e.context ?? []), ...notes] } : e)
   }).catch(($, e, next) => next(e))
 

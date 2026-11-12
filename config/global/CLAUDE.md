@@ -9,7 +9,7 @@ Adam describes work in plain English; you pick the tool and say it in one line. 
 - BROKEN -> `systematic-debugging`; root cause before fix. Build errors -> `build-error-resolver`. Red suite -> `eval-fix-loop` (agent fixes its own tests in a worktree).
 - TRIVIAL -> just do it. ASK (state/history) -> `harness-state` MCP or `/dashboard`.
 - Unfamiliar API -> context7. Prior art -> `/decisions search "<topic>"` first; cross-project decision made -> `/decisions add`.
-- Done means: run the repo's own checks (AGENTS.md), paste real output. Never infer success. Check exit codes, never a piped `| grep` result.
+- Done means: run the repo's own checks (AGENTS.md), paste real output. Never infer success. Check exit codes, never a piped `| grep` result. Before saying done, re-read the ask and mark each item shipped or not. For external APIs and DB writes, take field names from the source (docs, schema, a real response), never guess, and prove it with one real end-to-end call.
 - Non-trivial diff -> `parallel-review` (code-reviewer + security-reviewer + codex) before `/cap`. UI change -> `design-qa`.
 - DESIGN work (any UI, any repo) -> `taste` sets direction, `impeccable` critiques/polishes. Reference site -> `extract-design` first. Motion: `transitions-dev`, `gsap-*`, `react-bits`. Verify in a real browser with `playwright-cli` before calling it done.
 - Ship with `/cap`. Never `--no-verify`. Bug fixed -> `/log-mistake` + a regression eval in ~/.claude/evals/. Repo rule learned -> one line in that repo's AGENTS.md.

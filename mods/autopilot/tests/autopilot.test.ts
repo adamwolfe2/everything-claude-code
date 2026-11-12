@@ -312,10 +312,40 @@ test('each typed prompt is logged to telemetry, marked when it corrects Claude',
   await $.session.start({ cwd: '/home/adam/repo', source: 'startup' } as never)
   await $.prompt.submit({ text: 'add a footer', wait: false, origin: { kind: 'composer' } } as never)
   await $.prompt.submit({ text: "that's not what I asked for", wait: false, origin: { kind: 'composer' } } as never)
-  // A headless run (smoke test, cron) is not Adam typing.
+  // The desktop app arrives as 'sdk', so it is logged with its origin; plugin-injected prompts are not.
   await $.prompt.submit({ text: 'run the check', wait: false, origin: { kind: 'sdk' } } as never)
+  await $.prompt.submit({ text: 'injected', wait: false, origin: { kind: 'plugin' } } as never)
   const logged = runs.filter(a => a.includes('/home/adam/.claude/telemetry.jsonl')).map(a => JSON.parse(a[4] ?? '{}'))
-  expect(logged.map(l => [l.type, l.isCorrection])).toEqual([['autopilot.prompt', false], ['autopilot.prompt', true]])
+  expect(logged.map(l => [l.type, l.isCorrection, l.origin])).toEqual([
+    ['autopilot.prompt', false, 'composer'],
+    ['autopilot.prompt', true, 'composer'],
+    ['autopilot.prompt', false, 'sdk'],
+  ])
+})
+
+test('the router matches whole words, notes the top route once, and logs each routed prompt', async ($, on) => {
+  const runs: string[][] = []
+  const log = { registered: [] as string[], tools: [] as string[], writes: [] as string[], contexts: [] as string[][], runs }
+  const routes = JSON.stringify({ routes: [{ id: 'design', patterns: ['ui'], tool: 'taste', why: 'design direction' }] })
+  bottom(on, { ...log, files: new Map([['/home/adam/everything-claude-code/routing.json', routes]]) })
+  await $.session.start({ cwd: '/home/adam/repo', source: 'startup' } as never)
+  const routed = () => runs.filter(a => a.includes('/home/adam/.claude/routing-log.jsonl')).map(a => JSON.parse(a[4] ?? '{}'))
+
+  await $.prompt.submit({ text: 'build out the author page quickly', wait: false, origin: { kind: 'sdk' } } as never)
+  expect(log.contexts.at(-1)?.join(' ') ?? '').not.toContain('[router]')
+  expect(routed()).toEqual([])
+
+  await $.prompt.submit({ text: 'redesign the pricing page ui', wait: false, origin: { kind: 'sdk' } } as never)
+  expect(log.contexts.at(-1)?.join(' ')).toContain('[router] taste: design direction')
+  expect(routed().map(r => r.matched)).toEqual([['design']])
+
+  await $.prompt.submit({ text: 'tweak the ui again', wait: false, origin: { kind: 'composer' } } as never)
+  expect(log.contexts.at(-1)?.join(' ') ?? '').not.toContain('[router]')
+  expect(routed()).toHaveLength(2)
+
+  await $.prompt.submit({ text: `fix the ui ${'x'.repeat(2000)}`, wait: false, origin: { kind: 'composer' } } as never)
+  await $.prompt.submit({ text: 'the ui', wait: false, origin: { kind: 'plugin' } } as never)
+  expect(routed()).toHaveLength(2)
 })
 
 const LIB = '/home/adam/everything-claude-code/archive'
